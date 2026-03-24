@@ -28,8 +28,14 @@ export default function LoginScreen({ navigation }: Props) {
 
     dispatch(
       signIn({
-        name: "Issami",
+        id: "1",
+        name: "Issami Umeoka",
         email,
+        preferences: {
+          vegetarian: false,
+          glutenFree: false,
+          lactoseFree: false,
+        },
       })
     );
 
