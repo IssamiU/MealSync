@@ -56,6 +56,13 @@ export default function DashboardScreen({ navigation }: Props) {
         <Text>{shoppingItemsCount} itens na lista</Text>
       </View>
 
+      <View style={styles.buttonSpacing}>
+        <Button
+          title="Cadastrar nova receita"
+          onPress={() => navigation.navigate("CreateRecipe")}
+        />
+      </View>
+
       <Button title="Sair" onPress={handleLogout} />
     </View>
   );
@@ -87,5 +94,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 8,
+  },
+  buttonSpacing: {
+    marginBottom: 12,
   },
 });
