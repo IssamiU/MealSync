@@ -3,4 +3,5 @@ export type RootStackParamList = {
   Register: undefined;
   Dashboard: undefined;
   CreateRecipe: undefined;
+  RecipesList: undefined;
 };
