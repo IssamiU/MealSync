@@ -7,6 +7,7 @@ import RegisterScreen from "../screens/auth/RegisterScreen";
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
 import CreateRecipeScreen from "../screens/recipes/CreateRecipeScreen";
 import RecipesListScreen from "../screens/recipes/RecipesListScreen";
+import RecipeDetailsScreen from "../screens/recipes/RecipeDetailsScreen";
 import { RootStackParamList } from "../types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -44,6 +45,11 @@ export default function AppNavigator() {
           name="RecipesList"
           component={RecipesListScreen}
           options={{ title: "Receitas" }}
+        />
+        <Stack.Screen
+          name="RecipeDetails"
+          component={RecipeDetailsScreen}
+          options={{ title: "Detalhes da receita" }}
         />
       </Stack.Navigator>
     </NavigationContainer>

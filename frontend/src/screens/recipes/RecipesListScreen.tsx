@@ -6,12 +6,16 @@ import {
   Text,
   View,
 } from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useDispatch, useSelector } from "react-redux";
 
 import { RootState } from "../../store";
 import { toggleFavoriteRecipe } from "../../store/slices/recipesSlice";
+import { RootStackParamList } from "../../types/navigation";
 
-export default function RecipesListScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, "RecipesList">;
+
+export default function RecipesListScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const recipes = useSelector((state: RootState) => state.recipes.recipes);
 
@@ -30,30 +34,36 @@ export default function RecipesListScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.headerRow}>
-                <Text style={styles.title}>{item.title}</Text>
+            <Pressable
+              onPress={() =>
+                navigation.navigate("RecipeDetails", { recipeId: item.id })
+              }
+            >
+              <View style={styles.card}>
+                <View style={styles.headerRow}>
+                  <Text style={styles.title}>{item.title}</Text>
 
-                <Pressable
-                  onPress={() => dispatch(toggleFavoriteRecipe(item.id))}
-                  style={styles.favoriteButton}
-                >
-                  <Text style={styles.favoriteText}>
-                    {item.isFavorite ? "★" : "☆"}
-                  </Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => dispatch(toggleFavoriteRecipe(item.id))}
+                    style={styles.favoriteButton}
+                  >
+                    <Text style={styles.favoriteText}>
+                      {item.isFavorite ? "★" : "☆"}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <Text style={styles.info}>Categoria: {item.category}</Text>
+                <Text style={styles.info}>
+                  Tempo de preparo: {item.prepTimeMinutes} min
+                </Text>
+                <Text style={styles.info}>Porções: {item.servings}</Text>
+                <Text style={styles.info}>
+                  Ingredientes: {item.ingredients.length}
+                </Text>
+                <Text style={styles.info}>Passos: {item.steps.length}</Text>
               </View>
-
-              <Text style={styles.info}>Categoria: {item.category}</Text>
-              <Text style={styles.info}>
-                Tempo de preparo: {item.prepTimeMinutes} min
-              </Text>
-              <Text style={styles.info}>Porções: {item.servings}</Text>
-              <Text style={styles.info}>
-                Ingredientes: {item.ingredients.length}
-              </Text>
-              <Text style={styles.info}>Passos: {item.steps.length}</Text>
-            </View>
+            </Pressable>
           )}
         />
       )}
