@@ -9,6 +9,7 @@ import CreateRecipeScreen from "../screens/recipes/CreateRecipeScreen";
 import RecipesListScreen from "../screens/recipes/RecipesListScreen";
 import RecipeDetailsScreen from "../screens/recipes/RecipeDetailsScreen";
 import PlannerScreen from "../screens/planner/PlannerScreen";
+import ShoppingListScreen from "../screens/shopping/ShoppingListScreen";
 import { RootStackParamList } from "../types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -56,6 +57,11 @@ export default function AppNavigator() {
           name="Planner"
           component={PlannerScreen}
           options={{ title: "Planejamento semanal" }}
+        />
+        <Stack.Screen
+          name="ShoppingList"
+          component={ShoppingListScreen}
+          options={{ title: "Lista de compras" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
