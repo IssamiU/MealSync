@@ -7,4 +7,5 @@ export type RootStackParamList = {
   RecipeDetails: {
     recipeId: string;
   };
+  Planner: undefined;
 };

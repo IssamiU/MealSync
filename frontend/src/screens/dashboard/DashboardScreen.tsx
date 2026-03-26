@@ -70,6 +70,13 @@ export default function DashboardScreen({ navigation }: Props) {
         />
       </View>
 
+      <View style={styles.buttonSpacing}>
+        <Button
+          title="Planejamento semanal"
+          onPress={() => navigation.navigate("Planner")}
+        />
+      </View>
+
       <Button title="Sair" onPress={handleLogout} />
     </View>
   );
