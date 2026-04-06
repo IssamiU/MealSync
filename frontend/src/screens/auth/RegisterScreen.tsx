@@ -27,27 +27,53 @@ export default function RegisterScreen({ navigation }: Props) {
   const [glutenFree, setGlutenFree] = useState(false);
   const [lactoseFree, setLactoseFree] = useState(false);
 
-  function handleRegister() {
+  async function handleRegister() {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert("Atenção", "Preencha nome, e-mail e senha.");
+      Alert.alert("Atenção", "Preencha todos os campos.");
       return;
     }
 
-    dispatch(
-      signIn({
-        id: Date.now().toString(),
-        name,
-        email,
-        preferences: {
-          vegetarian,
-          glutenFree,
-          lactoseFree,
+    try {
+      const response = await fetch("http://192.168.15.8:3000/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      })
-    );
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          preferences: {
+            vegetarian,
+            glutenFree,
+            lactoseFree,
+          },
+        }),
+      });
 
-    Alert.alert("Sucesso", "Cadastro realizado com sucesso.");
-    navigation.replace("Dashboard");
+      const data = await response.json();
+
+      console.log("REGISTER STATUS:", response.status);
+      console.log("REGISTER DATA:", data);
+
+      if (!response.ok) {
+        Alert.alert("Erro", data.message || "Erro ao cadastrar");
+        return;
+      }
+
+      dispatch(
+        signIn({
+          ...data.user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        })
+      );
+
+      navigation.replace("Dashboard");
+    } catch (error) {
+      console.log("REGISTER ERROR:", error);
+      Alert.alert("Erro", "Não foi possível conectar ao servidor.");
+    }
   }
 
   return (
