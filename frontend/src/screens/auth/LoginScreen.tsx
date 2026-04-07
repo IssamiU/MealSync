@@ -10,6 +10,7 @@ import {
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useDispatch } from "react-redux";
 
+import { saveAuth } from "../../storage/authStorage";
 import { RootStackParamList } from "../../types/navigation";
 import { signIn } from "../../store/slices/authSlice";
 
@@ -48,15 +49,15 @@ export default function LoginScreen({ navigation }: Props) {
         return;
       }
 
-      dispatch(
-        signIn({
-          ...data.user,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
+      const authData = {
+        user: data.user,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+      };
 
-      navigation.replace("Dashboard");
+      await saveAuth(authData);
+      dispatch(signIn(authData));
+
     } catch (error) {
       console.log("LOGIN ERROR:", error);
       Alert.alert("Erro", "Não foi possível conectar ao servidor.");

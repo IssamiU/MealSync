@@ -1,16 +1,18 @@
 import React from "react";
-import { Button, StyleSheet, Text, View } from "react-native";
+import { Button, StyleSheet, Text, View, Alert } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useDispatch, useSelector } from "react-redux";
 
 import { RootState } from "../../store";
 import { signOut } from "../../store/slices/authSlice";
 import { RootStackParamList } from "../../types/navigation";
+import { removeAuth } from "../../storage/authStorage";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Dashboard">;
 
 export default function DashboardScreen({ navigation }: Props) {
   const dispatch = useDispatch();
+
   const user = useSelector((state: RootState) => state.auth.user);
   const recipesCount = useSelector(
     (state: RootState) => state.recipes.recipes.length
@@ -26,9 +28,14 @@ export default function DashboardScreen({ navigation }: Props) {
     (state: RootState) => state.shoppingList.items.length
   );
 
-  function handleLogout() {
-    dispatch(signOut());
-    navigation.replace("Login");
+  async function handleLogout() {
+    try {
+      await removeAuth(); 
+      dispatch(signOut()); 
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Não foi possível sair da conta.");
+    }
   }
 
   return (
