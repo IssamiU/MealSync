@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Button,
@@ -7,53 +7,74 @@ import {
   Text,
   View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useDispatch, useSelector } from "react-redux";
+import { API_URL } from "../../services/api";
+import { normalizeRecipe } from "../../utils/normalizeRecipe";
 
-import { RootState } from "../../store";
-import { toggleFavoriteRecipe } from "../../store/slices/recipesSlice";
-import { RootStackParamList } from "../../types/navigation";
-
-type Props = NativeStackScreenProps<RootStackParamList, "RecipeDetails">;
-
-export default function RecipeDetailsScreen({ route }: Props) {
-  const dispatch = useDispatch();
+export default function RecipeDetailsScreen({ route }: any) {
   const { recipeId } = route.params;
+  const [recipe, setRecipe] = useState<any>(null);
 
-  const recipe = useSelector((state: RootState) =>
-    state.recipes.recipes.find((item) => item.id === recipeId)
-  );
+  useEffect(() => {
+    loadRecipe();
+  }, []);
+
+  async function loadRecipe() {
+    try {
+      const response = await fetch(`${API_URL}/recipes/${recipeId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erro ao carregar receita");
+      }
+
+      setRecipe(normalizeRecipe(data));
+    } catch (error) {
+      console.log("Erro ao carregar receita:", error);
+      Alert.alert("Erro", "Erro ao carregar receita");
+    }
+  }
+
+  async function toggleFavorite() {
+    try {
+      const response = await fetch(`${API_URL}/recipes/${recipeId}/favorite`, {
+        method: "PATCH",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.log("Resposta de erro ao favoritar no detalhe:", data);
+        throw new Error(data.message || "Erro ao atualizar favorito");
+      }
+
+      const updated = normalizeRecipe(data);
+      setRecipe(updated);
+
+      Alert.alert(
+        "Favoritos",
+        updated.isFavorite
+          ? "Receita adicionada aos favoritos."
+          : "Receita removida dos favoritos."
+      );
+    } catch (error) {
+      console.log("Erro ao atualizar favorito no detalhe:", error);
+      Alert.alert("Erro", "Erro ao atualizar favorito");
+    }
+  }
 
   if (!recipe) {
     return (
-      <View style={styles.notFoundContainer}>
-        <Text style={styles.notFoundTitle}>Receita não encontrada</Text>
-        <Text style={styles.notFoundText}>
-          Não foi possível localizar esta receita.
-        </Text>
+      <View style={styles.loadingContainer}>
+        <Text>Carregando...</Text>
       </View>
     );
   }
-
-  function handleToggleFavorite() {
-    if (!recipe) return;
-
-    const wasFavorite = recipe.isFavorite;
-
-    dispatch(toggleFavoriteRecipe(recipe.id));
-
-    Alert.alert(
-        "Favoritos",
-        wasFavorite
-        ? "Receita removida dos favoritos."
-        : "Receita adicionada aos favoritos."
-    );
-    }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.headerCard}>
         <Text style={styles.title}>{recipe.title}</Text>
+
         <Text style={styles.meta}>Categoria: {recipe.category}</Text>
         <Text style={styles.meta}>
           Tempo de preparo: {recipe.prepTimeMinutes} min
@@ -70,7 +91,7 @@ export default function RecipeDetailsScreen({ route }: Props) {
                 ? "Remover dos favoritos"
                 : "Adicionar aos favoritos"
             }
-            onPress={handleToggleFavorite}
+            onPress={toggleFavorite}
           />
         </View>
       </View>
@@ -78,7 +99,7 @@ export default function RecipeDetailsScreen({ route }: Props) {
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Ingredientes</Text>
 
-        {recipe.ingredients.map((ingredient) => (
+        {recipe.ingredients.map((ingredient: any) => (
           <Text key={ingredient.id} style={styles.itemText}>
             • {ingredient.name} — {ingredient.quantity} {ingredient.unit}
           </Text>
@@ -88,7 +109,7 @@ export default function RecipeDetailsScreen({ route }: Props) {
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Modo de preparo</Text>
 
-        {recipe.steps.map((step, index) => (
+        {recipe.steps.map((step: any, index: number) => (
           <Text key={step.id} style={styles.itemText}>
             {index + 1}. {step.description}
           </Text>
@@ -141,21 +162,9 @@ const styles = StyleSheet.create({
   favoriteButton: {
     marginTop: 12,
   },
-  notFoundContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
-    backgroundColor: "#fff",
-  },
-  notFoundTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 8,
-  },
-  notFoundText: {
-    fontSize: 16,
-    textAlign: "center",
-    color: "#555",
   },
 });

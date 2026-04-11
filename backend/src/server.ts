@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import app from "./app";
+import { connectMongo } from "./config/mongo";
 import { pool } from "./config/database";
 import { initDb } from "./config/initDb";
 
@@ -11,6 +12,7 @@ async function startServer() {
   try {
     await pool.query("SELECT 1");
     await initDb();
+    await connectMongo();
 
     console.log("Banco de dados conectado com sucesso.");
 

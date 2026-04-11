@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 
+import recipeRoutes from "./routes/recipeRoutes";
 import authRoutes from "./routes/authRoutes";
 
 const app = express();
@@ -13,5 +14,5 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/auth", authRoutes);
-
+app.use("/recipes", recipeRoutes);
 export default app;
