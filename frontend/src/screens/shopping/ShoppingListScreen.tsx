@@ -241,13 +241,6 @@ export default function ShoppingListScreen({ navigation }: Props) {
         />
       )}
 
-      <Pressable
-        style={styles.backButton}
-        onPress={() => navigation.navigate("Dashboard")}
-      >
-        <Text style={styles.backButtonText}>Voltar ao dashboard</Text>
-      </Pressable>
-
       <Modal visible={isModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
