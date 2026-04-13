@@ -20,26 +20,47 @@ export default function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleLogin() {
+  async function handleLogin() {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Atenção", "Preencha e-mail e senha.");
       return;
     }
 
-    dispatch(
-      signIn({
-        id: "1",
-        name: "Issami Umeoka",
-        email,
-        preferences: {
-          vegetarian: false,
-          glutenFree: false,
-          lactoseFree: false,
+    try {
+      const response = await fetch("http://192.168.15.8:3000/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-      })
-    );
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    navigation.replace("Dashboard");
+      const data = await response.json();
+
+      console.log("LOGIN STATUS:", response.status);
+      console.log("LOGIN DATA:", data);
+
+      if (!response.ok) {
+        Alert.alert("Erro", data.message || "Erro ao fazer login");
+        return;
+      }
+
+      dispatch(
+        signIn({
+          ...data.user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        })
+      );
+
+      navigation.replace("Dashboard");
+    } catch (error) {
+      console.log("LOGIN ERROR:", error);
+      Alert.alert("Erro", "Não foi possível conectar ao servidor.");
+    }
   }
 
   return (
