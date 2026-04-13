@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
 import DashboardScreen from "../screens/dashboard/DashboardScreen";
+import CreateRecipeScreen from "../screens/recipes/CreateRecipeScreen";
 import { RootStackParamList } from "../types/navigation";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -32,6 +33,11 @@ export default function AppNavigator() {
           name="Dashboard"
           component={DashboardScreen}
           options={{ title: "Comprinhas" }}
+        />
+        <Stack.Screen
+          name="CreateRecipe"
+          component={CreateRecipeScreen}
+          options={{ title: "Nova receita" }}
         />
       </Stack.Navigator>
     </NavigationContainer>
