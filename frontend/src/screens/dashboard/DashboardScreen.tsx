@@ -77,6 +77,13 @@ export default function DashboardScreen({ navigation }: Props) {
         />
       </View>
 
+      <View style={styles.buttonSpacing}>
+        <Button
+          title="Lista de compras"
+          onPress={() => navigation.navigate("ShoppingList")}
+        />
+      </View>
+
       <Button title="Sair" onPress={handleLogout} />
     </View>
   );

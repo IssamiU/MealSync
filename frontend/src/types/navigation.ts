@@ -8,4 +8,5 @@ export type RootStackParamList = {
     recipeId: string;
   };
   Planner: undefined;
+  ShoppingList: undefined;
 };
