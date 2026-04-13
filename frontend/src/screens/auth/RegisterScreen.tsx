@@ -10,12 +10,15 @@ import {
   View,
 } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useDispatch } from "react-redux";
 
 import { RootStackParamList } from "../../types/navigation";
+import { signIn } from "../../store/slices/authSlice";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
 
 export default function RegisterScreen({ navigation }: Props) {
+  const dispatch = useDispatch();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,14 +33,21 @@ export default function RegisterScreen({ navigation }: Props) {
       return;
     }
 
-    Alert.alert(
-      "Cadastro realizado",
-      `Preferências:\nVegetariano: ${vegetarian ? "Sim" : "Não"}\nSem glúten: ${
-        glutenFree ? "Sim" : "Não"
-      }\nSem lactose: ${lactoseFree ? "Sim" : "Não"}`
+    dispatch(
+      signIn({
+        id: Date.now().toString(),
+        name,
+        email,
+        preferences: {
+          vegetarian,
+          glutenFree,
+          lactoseFree,
+        },
+      })
     );
 
-    navigation.goBack();
+    Alert.alert("Sucesso", "Cadastro realizado com sucesso.");
+    navigation.replace("Dashboard");
   }
 
   return (

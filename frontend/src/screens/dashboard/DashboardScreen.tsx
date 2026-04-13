@@ -12,6 +12,19 @@ type Props = NativeStackScreenProps<RootStackParamList, "Dashboard">;
 export default function DashboardScreen({ navigation }: Props) {
   const dispatch = useDispatch();
   const user = useSelector((state: RootState) => state.auth.user);
+  const recipesCount = useSelector(
+    (state: RootState) => state.recipes.recipes.length
+  );
+  const favoritesCount = useSelector(
+    (state: RootState) =>
+      state.recipes.recipes.filter((recipe) => recipe.isFavorite).length
+  );
+  const plannedMealsCount = useSelector(
+    (state: RootState) => state.planner.plannedMeals.length
+  );
+  const shoppingItemsCount = useSelector(
+    (state: RootState) => state.shoppingList.items.length
+  );
 
   function handleLogout() {
     dispatch(signOut());
@@ -21,23 +34,26 @@ export default function DashboardScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Resumo semanal</Text>
-      <Text style={styles.subtitle}>
-        Olá, {user?.name ?? "usuário"}!
-      </Text>
+      <Text style={styles.subtitle}>Olá, {user?.name ?? "usuário"}!</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Receitas planejadas</Text>
-        <Text>0 receitas cadastradas no planejamento</Text>
+        <Text style={styles.cardTitle}>Receitas cadastradas</Text>
+        <Text>{recipesCount} receitas no aplicativo</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Receitas favoritas</Text>
+        <Text>{favoritesCount} receitas favoritas</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Planejamento semanal</Text>
+        <Text>{plannedMealsCount} refeições planejadas</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Lista de compras</Text>
-        <Text>0 itens na lista</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Dica</Text>
-        <Text>Aproveite ingredientes que já estão na geladeira.</Text>
+        <Text>{shoppingItemsCount} itens na lista</Text>
       </View>
 
       <Button title="Sair" onPress={handleLogout} />
