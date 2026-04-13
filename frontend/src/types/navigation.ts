@@ -4,4 +4,7 @@ export type RootStackParamList = {
   Dashboard: undefined;
   CreateRecipe: undefined;
   RecipesList: undefined;
+  RecipeDetails: {
+    recipeId: string;
+  };
 };
