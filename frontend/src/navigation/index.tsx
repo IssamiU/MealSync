@@ -1,6 +1,8 @@
 import React from "react";
+import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useSelector } from "react-redux";
 
 import LoginScreen from "../screens/auth/LoginScreen";
 import RegisterScreen from "../screens/auth/RegisterScreen";
@@ -11,59 +13,86 @@ import RecipeDetailsScreen from "../screens/recipes/RecipeDetailsScreen";
 import PlannerScreen from "../screens/planner/PlannerScreen";
 import ShoppingListScreen from "../screens/shopping/ShoppingListScreen";
 import { RootStackParamList } from "../types/navigation";
+import { RootState } from "../store";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function AppNavigator() {
+  const { isAuthenticated, isLoading } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Login"
         screenOptions={{
           headerTitleAlign: "center",
         }}
       >
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ title: "Entrar" }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={RegisterScreen}
-          options={{ title: "Cadastro" }}
-        />
-        <Stack.Screen
-          name="Dashboard"
-          component={DashboardScreen}
-          options={{ title: "Comprinhas" }}
-        />
-        <Stack.Screen
-          name="CreateRecipe"
-          component={CreateRecipeScreen}
-          options={{ title: "Nova receita" }}
-        />
-        <Stack.Screen
-          name="RecipesList"
-          component={RecipesListScreen}
-          options={{ title: "Receitas" }}
-        />
-        <Stack.Screen
-          name="RecipeDetails"
-          component={RecipeDetailsScreen}
-          options={{ title: "Detalhes da receita" }}
-        />
-        <Stack.Screen
-          name="Planner"
-          component={PlannerScreen}
-          options={{ title: "Planejamento semanal" }}
-        />
-        <Stack.Screen
-          name="ShoppingList"
-          component={ShoppingListScreen}
-          options={{ title: "Lista de compras" }}
-        />
+        {!isAuthenticated ? (
+          <>
+            <Stack.Screen
+              name="Login"
+              component={LoginScreen}
+              options={{ title: "Entrar" }}
+            />
+            <Stack.Screen
+              name="Register"
+              component={RegisterScreen}
+              options={{ title: "Cadastro" }}
+            />
+          </>
+        ) : (
+          <>
+            <Stack.Screen
+              name="Dashboard"
+              component={DashboardScreen}
+              options={{ title: "Comprinhas" }}
+            />
+            <Stack.Screen
+              name="CreateRecipe"
+              component={CreateRecipeScreen}
+              options={{ title: "Nova receita" }}
+            />
+            <Stack.Screen
+              name="RecipesList"
+              component={RecipesListScreen}
+              options={{ title: "Receitas" }}
+            />
+            <Stack.Screen
+              name="RecipeDetails"
+              component={RecipeDetailsScreen}
+              options={{ title: "Detalhes da receita" }}
+            />
+            <Stack.Screen
+              name="Planner"
+              component={PlannerScreen}
+              options={{ title: "Planejamento semanal" }}
+            />
+            <Stack.Screen
+              name="ShoppingList"
+              component={ShoppingListScreen}
+              options={{ title: "Lista de compras" }}
+            />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
