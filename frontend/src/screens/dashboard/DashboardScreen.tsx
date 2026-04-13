@@ -1,129 +1,234 @@
-import React from "react";
-import { Button, StyleSheet, Text, View, Alert } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import React, { useCallback } from "react";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import { useFocusEffect } from "@react-navigation/native";
 
 import { RootState } from "../../store";
 import { signOut } from "../../store/slices/authSlice";
-import { RootStackParamList } from "../../types/navigation";
+import { setRecipes } from "../../store/slices/recipesSlice";
+import { normalizeRecipe } from "../../utils/normalizeRecipe";
+import { API_URL } from "../../services/api";
 import { removeAuth } from "../../storage/authStorage";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Dashboard">;
-
-export default function DashboardScreen({ navigation }: Props) {
+export default function DashboardScreen({ navigation }: any) {
   const dispatch = useDispatch();
 
   const user = useSelector((state: RootState) => state.auth.user);
-  const recipesCount = useSelector(
-    (state: RootState) => state.recipes.recipes.length
+  const recipes = useSelector((state: RootState) => state.recipes.recipes);
+  const plannedMeals = useSelector(
+    (state: RootState) => state.planner.plannedMeals
   );
-  const favoritesCount = useSelector(
-    (state: RootState) =>
-      state.recipes.recipes.filter((recipe) => recipe.isFavorite).length
+  const shoppingItems = useSelector(
+    (state: RootState) => state.shoppingList.items
   );
-  const plannedMealsCount = useSelector(
-    (state: RootState) => state.planner.plannedMeals.length
-  );
-  const shoppingItemsCount = useSelector(
-    (state: RootState) => state.shoppingList.items.length
+
+  const recipesCount = recipes.length;
+  const favoritesCount = recipes.filter((r) => r.isFavorite).length;
+  const plannedMealsCount = plannedMeals.length;
+  const shoppingItemsCount = shoppingItems.length;
+
+  const loadRecipes = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/recipes`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erro ao carregar receitas");
+      }
+
+      dispatch(setRecipes(data.map(normalizeRecipe)));
+    } catch (error) {
+      console.log("Erro ao carregar receitas no dashboard:", error);
+    }
+  }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRecipes();
+    }, [loadRecipes])
   );
 
   async function handleLogout() {
     try {
-      await removeAuth(); 
-      dispatch(signOut()); 
+      await removeAuth();
+      dispatch(signOut());
     } catch (error) {
-      console.error(error);
+      console.log("Erro ao sair:", error);
       Alert.alert("Erro", "Não foi possível sair da conta.");
     }
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Resumo semanal</Text>
-      <Text style={styles.subtitle}>Olá, {user?.name ?? "usuário"}!</Text>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Receitas cadastradas</Text>
-        <Text>{recipesCount} receitas no aplicativo</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Resumo semanal</Text>
+        <Text style={styles.subtitle}>Olá, {user?.name ?? "usuário"}!</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Receitas favoritas</Text>
-        <Text>{favoritesCount} receitas favoritas</Text>
+      <Text style={styles.sectionTitle}>Visão geral</Text>
+
+      <View style={styles.metricsGrid}>
+        <View style={styles.metricCard}>
+          <Text style={styles.metricNumber}>{recipesCount}</Text>
+          <Text style={styles.metricLabel}>Receitas cadastradas</Text>
+        </View>
+
+        <View style={styles.metricCard}>
+          <Text style={styles.metricNumber}>{favoritesCount}</Text>
+          <Text style={styles.metricLabel}>Receitas favoritas</Text>
+        </View>
+
+        <View style={styles.metricCard}>
+          <Text style={styles.metricNumber}>{plannedMealsCount}</Text>
+          <Text style={styles.metricLabel}>Refeições planejadas</Text>
+        </View>
+
+        <View style={styles.metricCard}>
+          <Text style={styles.metricNumber}>{shoppingItemsCount}</Text>
+          <Text style={styles.metricLabel}>Itens na lista</Text>
+        </View>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Planejamento semanal</Text>
-        <Text>{plannedMealsCount} refeições planejadas</Text>
-      </View>
+      <Text style={styles.sectionTitle}>Acessos rápidos</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Lista de compras</Text>
-        <Text>{shoppingItemsCount} itens na lista</Text>
-      </View>
-
-      <View style={styles.buttonSpacing}>
-        <Button
-          title="Cadastrar nova receita"
+      <View style={styles.actionsContainer}>
+        <Pressable
+          style={styles.actionCard}
           onPress={() => navigation.navigate("CreateRecipe")}
-        />
-      </View>
+        >
+          <Text style={styles.actionTitle}>Cadastrar nova receita</Text>
+          <Text style={styles.actionDescription}>
+            Adicione uma nova receita ao seu app.
+          </Text>
+        </Pressable>
 
-      <View style={styles.buttonSpacing}>
-        <Button
-          title="Ver receitas cadastradas"
+        <Pressable
+          style={styles.actionCard}
           onPress={() => navigation.navigate("RecipesList")}
-        />
-      </View>
+        >
+          <Text style={styles.actionTitle}>Ver receitas cadastradas</Text>
+          <Text style={styles.actionDescription}>
+            Consulte, favorite e gerencie suas receitas.
+          </Text>
+        </Pressable>
 
-      <View style={styles.buttonSpacing}>
-        <Button
-          title="Planejamento semanal"
+        <Pressable
+          style={styles.actionCard}
           onPress={() => navigation.navigate("Planner")}
-        />
-      </View>
+        >
+          <Text style={styles.actionTitle}>Planejamento semanal</Text>
+          <Text style={styles.actionDescription}>
+            Organize refeições para cada dia da semana.
+          </Text>
+        </Pressable>
 
-      <View style={styles.buttonSpacing}>
-        <Button
-          title="Lista de compras"
+        <Pressable
+          style={styles.actionCard}
           onPress={() => navigation.navigate("ShoppingList")}
-        />
+        >
+          <Text style={styles.actionTitle}>Lista de compras</Text>
+          <Text style={styles.actionDescription}>
+            Gere e edite sua lista com base no planejamento.
+          </Text>
+        </Pressable>
       </View>
 
-      <Button title="Sair" onPress={handleLogout} />
-    </View>
+      <Pressable style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Sair</Text>
+      </Pressable>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    padding: 20,
     backgroundColor: "#f5f5f5",
-    padding: 24,
+  },
+  header: {
+    marginBottom: 20,
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 6,
+    color: "#111827",
   },
   subtitle: {
-    fontSize: 18,
-    marginBottom: 24,
+    fontSize: 17,
+    color: "#4b5563",
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
+    marginTop: 8,
+    color: "#111827",
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  metricCard: {
+    width: "48%",
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: 14,
+    marginBottom: 12,
     elevation: 2,
   },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 8,
+  metricNumber: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 6,
   },
-  buttonSpacing: {
+  metricLabel: {
+    fontSize: 14,
+    color: "#4b5563",
+    lineHeight: 20,
+  },
+  actionsContainer: {
+    marginBottom: 24,
+  },
+  actionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 16,
     marginBottom: 12,
+    elevation: 2,
+  },
+  actionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 6,
+    color: "#111827",
+  },
+  actionDescription: {
+    fontSize: 14,
+    color: "#4b5563",
+    lineHeight: 20,
+  },
+  logoutButton: {
+    backgroundColor: "#dc2626",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  logoutButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
   },
 });

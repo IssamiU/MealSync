@@ -1,23 +1,93 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useFocusEffect } from "@react-navigation/native";
 import { useDispatch, useSelector } from "react-redux";
 
 import { RootState } from "../../store";
-import { toggleFavoriteRecipe } from "../../store/slices/recipesSlice";
-import { RootStackParamList } from "../../types/navigation";
+import { setRecipes, updateRecipe } from "../../store/slices/recipesSlice";
+import { normalizeRecipe } from "../../utils/normalizeRecipe";
+import { API_URL } from "../../services/api";
 
-type Props = NativeStackScreenProps<RootStackParamList, "RecipesList">;
-
-export default function RecipesListScreen({ navigation }: Props) {
+export default function RecipesListScreen({ navigation }: any) {
   const dispatch = useDispatch();
   const recipes = useSelector((state: RootState) => state.recipes.recipes);
+
+  const loadRecipes = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/recipes`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erro ao carregar receitas");
+      }
+
+      dispatch(setRecipes(data.map(normalizeRecipe)));
+    } catch (error) {
+      console.log("Erro ao carregar receitas:", error);
+      Alert.alert("Erro", "Erro ao carregar receitas");
+    }
+  }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadRecipes();
+    }, [loadRecipes])
+  );
+
+  async function toggleFavorite(id: string) {
+    try {
+      const response = await fetch(`${API_URL}/recipes/${id}/favorite`, {
+        method: "PATCH",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Erro ao atualizar favorito");
+      }
+
+      dispatch(updateRecipe(normalizeRecipe(data)));
+    } catch (error) {
+      console.log("Erro ao atualizar favorito:", error);
+      Alert.alert("Erro", "Erro ao atualizar favorito");
+    }
+  }
+
+  function handleDelete(id: string) {
+    Alert.alert("Excluir receita", "Deseja excluir esta receita?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const response = await fetch(`${API_URL}/recipes/${id}`, {
+              method: "DELETE",
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+              throw new Error(data.message || "Erro ao excluir receita");
+            }
+
+            await loadRecipes();
+            Alert.alert("Sucesso", "Receita excluída");
+          } catch (error) {
+            console.log("Erro ao excluir receita:", error);
+            Alert.alert("Erro", "Erro ao excluir receita");
+          }
+        },
+      },
+    ]);
+  }
 
   return (
     <View style={styles.container}>
@@ -34,36 +104,56 @@ export default function RecipesListScreen({ navigation }: Props) {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() =>
-                navigation.navigate("RecipeDetails", { recipeId: item.id })
-              }
-            >
-              <View style={styles.card}>
-                <View style={styles.headerRow}>
+            <View style={styles.card}>
+              <View style={styles.headerRow}>
+                <Pressable
+                  style={styles.titleArea}
+                  onPress={() =>
+                    navigation.navigate("RecipeDetails", {
+                      recipeId: item.id,
+                    })
+                  }
+                >
                   <Text style={styles.title}>{item.title}</Text>
+                </Pressable>
 
-                  <Pressable
-                    onPress={() => dispatch(toggleFavoriteRecipe(item.id))}
-                    style={styles.favoriteButton}
-                  >
-                    <Text style={styles.favoriteText}>
-                      {item.isFavorite ? "★" : "☆"}
-                    </Text>
-                  </Pressable>
-                </View>
+                <Pressable
+                  style={styles.favoriteButton}
+                  onPress={() => toggleFavorite(item.id)}
+                >
+                  <Text style={styles.favoriteText}>
+                    {item.isFavorite ? "★" : "☆"}
+                  </Text>
+                </Pressable>
+              </View>
 
+              <Pressable
+                onPress={() =>
+                  navigation.navigate("RecipeDetails", {
+                    recipeId: item.id,
+                  })
+                }
+              >
                 <Text style={styles.info}>Categoria: {item.category}</Text>
                 <Text style={styles.info}>
-                  Tempo de preparo: {item.prepTimeMinutes} min
+                  Tempo: {item.prepTimeMinutes} min
                 </Text>
                 <Text style={styles.info}>Porções: {item.servings}</Text>
                 <Text style={styles.info}>
                   Ingredientes: {item.ingredients.length}
                 </Text>
                 <Text style={styles.info}>Passos: {item.steps.length}</Text>
+              </Pressable>
+
+              <View style={styles.actionsRow}>
+                <Pressable
+                  style={styles.deleteButton}
+                  onPress={() => handleDelete(item.id)}
+                >
+                  <Text style={styles.deleteText}>Excluir</Text>
+                </Pressable>
               </View>
-            </Pressable>
+            </View>
           )}
         />
       )}
@@ -89,14 +179,16 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
     marginBottom: 10,
+    alignItems: "flex-start",
+  },
+  titleArea: {
+    flex: 1,
+    marginRight: 12,
   },
   title: {
-    flex: 1,
     fontSize: 20,
     fontWeight: "700",
-    marginRight: 12,
   },
   favoriteButton: {
     paddingHorizontal: 8,
@@ -110,6 +202,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     color: "#333",
   },
+  actionsRow: {
+    marginTop: 10,
+    alignItems: "flex-end",
+  },
+  deleteButton: {
+    backgroundColor: "#dc2626",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  deleteText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -119,11 +225,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 22,
     fontWeight: "700",
-    marginBottom: 8,
   },
   emptyText: {
     fontSize: 16,
-    textAlign: "center",
     color: "#555",
+    textAlign: "center",
+    marginTop: 6,
   },
 });

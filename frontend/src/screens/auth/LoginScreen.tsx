@@ -7,17 +7,15 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useDispatch } from "react-redux";
 
-import { saveAuth } from "../../storage/authStorage";
-import { RootStackParamList } from "../../types/navigation";
 import { signIn } from "../../store/slices/authSlice";
+import { saveAuth } from "../../storage/authStorage";
+import { API_URL } from "../../services/api";
 
-type Props = NativeStackScreenProps<RootStackParamList, "Login">;
-
-export default function LoginScreen({ navigation }: Props) {
+export default function LoginScreen({ navigation }: any) {
   const dispatch = useDispatch();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -28,21 +26,15 @@ export default function LoginScreen({ navigation }: Props) {
     }
 
     try {
-      const response = await fetch("http://192.168.15.8:3000/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
-
-      console.log("LOGIN STATUS:", response.status);
-      console.log("LOGIN DATA:", data);
 
       if (!response.ok) {
         Alert.alert("Erro", data.message || "Erro ao fazer login");
@@ -59,7 +51,7 @@ export default function LoginScreen({ navigation }: Props) {
       dispatch(signIn(authData));
 
     } catch (error) {
-      console.log("LOGIN ERROR:", error);
+      console.log(error);
       Alert.alert("Erro", "Não foi possível conectar ao servidor.");
     }
   }

@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import {
   Alert,
-  Button,
   FlatList,
   Modal,
   Pressable,
@@ -28,12 +27,6 @@ import { generateShoppingListFromPlanner } from "../../utils/generateShoppingLis
 
 type Props = NativeStackScreenProps<RootStackParamList, "ShoppingList">;
 
-const initialFormState = {
-  name: "",
-  quantity: "",
-  unit: "",
-};
-
 export default function ShoppingListScreen({ navigation }: Props) {
   const dispatch = useDispatch();
 
@@ -47,16 +40,16 @@ export default function ShoppingListScreen({ navigation }: Props) {
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [name, setName] = useState(initialFormState.name);
-  const [quantity, setQuantity] = useState(initialFormState.quantity);
-  const [unit, setUnit] = useState(initialFormState.unit);
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("");
 
   const isEditing = useMemo(() => editingItemId !== null, [editingItemId]);
 
   function resetForm() {
-    setName(initialFormState.name);
-    setQuantity(initialFormState.quantity);
-    setUnit(initialFormState.unit);
+    setName("");
+    setQuantity("");
+    setUnit("");
     setEditingItemId(null);
   }
 
@@ -87,60 +80,72 @@ export default function ShoppingListScreen({ navigation }: Props) {
       return;
     }
 
-    const generatedItems = generateShoppingListFromPlanner(plannedMeals, recipes);
+    const generatedItems = generateShoppingListFromPlanner(
+      plannedMeals,
+      recipes
+    );
 
     dispatch(setShoppingList(generatedItems));
-    Alert.alert("Sucesso", "Lista de compras gerada com sucesso.");
+    Alert.alert("Sucesso", "Lista gerada com sucesso.");
   }
 
   function handleClearList() {
-    dispatch(clearShoppingList());
-  }
-
-  function handleSaveItem() {
-    if (!name.trim() || !quantity.trim() || !unit.trim()) {
-      Alert.alert("Atenção", "Preencha nome, quantidade e unidade.");
+    if (shoppingItems.length === 0) {
+      Alert.alert("Atenção", "A lista já está vazia.");
       return;
     }
 
+    Alert.alert("Limpar lista", "Deseja remover todos os itens da lista?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Limpar",
+        style: "destructive",
+        onPress: () => dispatch(clearShoppingList()),
+      },
+    ]);
+  }
+
+  function handleSaveItem() {
     const parsedQuantity = Number(quantity);
 
-    if (Number.isNaN(parsedQuantity) || parsedQuantity <= 0) {
-      Alert.alert("Atenção", "Informe uma quantidade válida maior que zero.");
+    if (!name || !quantity || !unit || parsedQuantity <= 0) {
+      Alert.alert("Erro", "Preencha corretamente.");
       return;
     }
 
     if (isEditing && editingItemId) {
-        const currentItem = shoppingItems.find((item) => item.id === editingItemId);
+      const currentItem = shoppingItems.find((i) => i.id === editingItemId);
 
-        dispatch(
-            updateShoppingListItem({
-            id: editingItemId,
-            name: name.trim(),
-            quantity: parsedQuantity,
-            unit: unit.trim(),
-            checked: currentItem?.checked ?? false,
-            })
-        );
-        Alert.alert("Sucesso", "Item atualizado com sucesso.");
-        } else {
+      dispatch(
+        updateShoppingListItem({
+          id: editingItemId,
+          name,
+          quantity: parsedQuantity,
+          unit,
+          checked: currentItem?.checked ?? false,
+        })
+      );
+
+      Alert.alert("Sucesso", "Item atualizado.");
+    } else {
       dispatch(
         addShoppingListItem({
           id: Date.now().toString(),
-          name: name.trim(),
+          name,
           quantity: parsedQuantity,
-          unit: unit.trim(),
+          unit,
           checked: false,
         })
       );
-      Alert.alert("Sucesso", "Item adicionado com sucesso.");
+
+      Alert.alert("Sucesso", "Item adicionado.");
     }
 
     closeModal();
   }
 
   function handleRemoveItem(id: string) {
-    Alert.alert("Remover item", "Deseja remover este item da lista?", [
+    Alert.alert("Remover", "Deseja remover este item?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Remover",
@@ -152,25 +157,43 @@ export default function ShoppingListScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.actions}>
-        <View style={styles.buttonSpacing}>
-          <Button title="Gerar lista automaticamente" onPress={handleGenerateList} />
-        </View>
+      <Text style={styles.title}>Lista de compras</Text>
+      <Text style={styles.subtitle}>
+        Gere sua lista com base no planejamento ou adicione itens manualmente.
+      </Text>
 
-        <View style={styles.buttonSpacing}>
-          <Button title="Adicionar item manualmente" onPress={openAddModal} />
-        </View>
+      <Text style={styles.sectionTitle}>Ações rápidas</Text>
 
-        <View style={styles.buttonSpacing}>
-          <Button title="Limpar lista" onPress={handleClearList} />
-        </View>
+      <View style={styles.actionsContainer}>
+        <Pressable style={styles.actionCard} onPress={handleGenerateList}>
+          <Text style={styles.actionTitle}>Gerar lista automaticamente</Text>
+          <Text style={styles.actionDescription}>
+            Usa o planejamento semanal para montar a lista de compras.
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.actionCard} onPress={openAddModal}>
+          <Text style={styles.actionTitle}>Adicionar item manualmente</Text>
+          <Text style={styles.actionDescription}>
+            Inclua um item avulso que não veio do planejamento.
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.actionCard} onPress={handleClearList}>
+          <Text style={styles.actionTitle}>Limpar lista</Text>
+          <Text style={styles.actionDescription}>
+            Remove todos os itens atuais da sua lista de compras.
+          </Text>
+        </Pressable>
       </View>
+
+      <Text style={styles.sectionTitle}>Itens</Text>
 
       {shoppingItems.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>Lista vazia</Text>
           <Text style={styles.emptyText}>
-            Gere a lista com base no planejamento semanal ou adicione itens manualmente.
+            Gere a lista ou adicione itens manualmente.
           </Text>
         </View>
       ) : (
@@ -181,8 +204,8 @@ export default function ShoppingListScreen({ navigation }: Props) {
           renderItem={({ item }) => (
             <View
               style={[
-                styles.itemCard,
-                item.checked ? styles.itemCheckedCard : undefined,
+                styles.card,
+                item.checked ? styles.checkedCard : undefined,
               ]}
             >
               <Pressable
@@ -198,19 +221,19 @@ export default function ShoppingListScreen({ navigation }: Props) {
                 </Text>
               </Pressable>
 
-              <View style={styles.itemButtons}>
+              <View style={styles.buttonsRow}>
                 <Pressable
-                  style={[styles.smallButton, styles.editButton]}
+                  style={styles.editButton}
                   onPress={() => openEditModal(item)}
                 >
-                  <Text style={styles.smallButtonText}>Editar</Text>
+                  <Text style={styles.buttonText}>Editar</Text>
                 </Pressable>
 
                 <Pressable
-                  style={[styles.smallButton, styles.removeButton]}
+                  style={styles.removeButton}
                   onPress={() => handleRemoveItem(item.id)}
                 >
-                  <Text style={styles.smallButtonText}>Remover</Text>
+                  <Text style={styles.buttonText}>Remover</Text>
                 </Pressable>
               </View>
             </View>
@@ -218,19 +241,14 @@ export default function ShoppingListScreen({ navigation }: Props) {
         />
       )}
 
-      <View style={styles.footerSpacing}>
-        <Button
-          title="Voltar ao dashboard"
-          onPress={() => navigation.navigate("Dashboard")}
-        />
-      </View>
-
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={closeModal}
+      <Pressable
+        style={styles.backButton}
+        onPress={() => navigation.navigate("Dashboard")}
       >
+        <Text style={styles.backButtonText}>Voltar ao dashboard</Text>
+      </Pressable>
+
+      <Modal visible={isModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>
@@ -239,7 +257,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
 
             <TextInput
               style={styles.input}
-              placeholder="Nome do item"
+              placeholder="Nome"
               value={name}
               onChangeText={setName}
             />
@@ -259,13 +277,13 @@ export default function ShoppingListScreen({ navigation }: Props) {
               onChangeText={setUnit}
             />
 
-            <View style={styles.modalButtons}>
-              <View style={styles.modalButtonSpacing}>
-                <Button title="Salvar" onPress={handleSaveItem} />
-              </View>
+            <Pressable style={styles.modalPrimaryButton} onPress={handleSaveItem}>
+              <Text style={styles.modalPrimaryButtonText}>Salvar</Text>
+            </Pressable>
 
-              <Button title="Cancelar" onPress={closeModal} color="#666" />
-            </View>
+            <Pressable style={styles.modalSecondaryButton} onPress={closeModal}>
+              <Text style={styles.modalSecondaryButtonText}>Cancelar</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -277,26 +295,59 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    padding: 16,
+    padding: 20,
   },
-  actions: {
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 6,
+    color: "#111827",
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#4b5563",
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
     marginBottom: 12,
+    color: "#111827",
   },
-  buttonSpacing: {
-    marginBottom: 10,
+  actionsContainer: {
+    marginBottom: 20,
+  },
+  actionCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 2,
+  },
+  actionTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    marginBottom: 6,
+    color: "#111827",
+  },
+  actionDescription: {
+    fontSize: 14,
+    color: "#4b5563",
+    lineHeight: 20,
   },
   listContent: {
     paddingBottom: 12,
   },
-  itemCard: {
+  card: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     elevation: 2,
   },
-  itemCheckedCard: {
-    opacity: 0.65,
+  checkedCard: {
+    opacity: 0.6,
   },
   itemInfoArea: {
     marginBottom: 12,
@@ -305,28 +356,29 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 6,
+    color: "#111827",
   },
   itemInfo: {
-    fontSize: 15,
     color: "#444",
   },
-  itemButtons: {
+  buttonsRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 8,
   },
-  smallButton: {
-    borderRadius: 8,
+  editButton: {
+    backgroundColor: "#2563eb",
     paddingVertical: 8,
     paddingHorizontal: 12,
-  },
-  editButton: {
-    backgroundColor: "#1d4ed8",
+    borderRadius: 8,
   },
   removeButton: {
     backgroundColor: "#dc2626",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
-  smallButtonText: {
+  buttonText: {
     color: "#fff",
     fontWeight: "600",
   },
@@ -334,49 +386,78 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    paddingVertical: 32,
   },
   emptyTitle: {
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 8,
+    color: "#111827",
   },
   emptyText: {
-    fontSize: 16,
-    textAlign: "center",
     color: "#555",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 22,
   },
-  footerSpacing: {
+  backButton: {
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
     marginTop: 8,
+  },
+  backButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.4)",
     justifyContent: "center",
     padding: 20,
   },
   modalCard: {
     backgroundColor: "#fff",
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 20,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
-    marginBottom: 16,
+    marginBottom: 12,
+    color: "#111827",
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    backgroundColor: "#fff",
-  },
-  modalButtons: {
-    marginTop: 8,
-  },
-  modalButtonSpacing: {
+    padding: 10,
     marginBottom: 10,
+  },
+  modalPrimaryButton: {
+    backgroundColor: "#2563eb",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  modalPrimaryButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  modalSecondaryButton: {
+    backgroundColor: "#e5e7eb",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  modalSecondaryButtonText: {
+    color: "#111827",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });

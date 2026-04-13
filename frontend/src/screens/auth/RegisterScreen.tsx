@@ -2,30 +2,17 @@ import React, { useState } from "react";
 import {
   Alert,
   Button,
-  ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useDispatch } from "react-redux";
+import { API_URL } from "../../services/api";
 
-import { RootStackParamList } from "../../types/navigation";
-import { signIn } from "../../store/slices/authSlice";
-
-type Props = NativeStackScreenProps<RootStackParamList, "Register">;
-
-export default function RegisterScreen({ navigation }: Props) {
-  const dispatch = useDispatch();
+export default function RegisterScreen({ navigation }: any) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const [vegetarian, setVegetarian] = useState(false);
-  const [glutenFree, setGlutenFree] = useState(false);
-  const [lactoseFree, setLactoseFree] = useState(false);
 
   async function handleRegister() {
     if (!name.trim() || !email.trim() || !password.trim()) {
@@ -34,50 +21,31 @@ export default function RegisterScreen({ navigation }: Props) {
     }
 
     try {
-      const response = await fetch("http://192.168.15.8:3000/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          preferences: {
-            vegetarian,
-            glutenFree,
-            lactoseFree,
-          },
-        }),
+        body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await response.json();
-
-      console.log("REGISTER STATUS:", response.status);
-      console.log("REGISTER DATA:", data);
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        Alert.alert("Erro", data.message || "Erro ao cadastrar");
+        Alert.alert("Erro", data?.message || "Erro ao cadastrar");
         return;
       }
 
-      dispatch(
-        signIn({
-          ...data.user,
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        })
-      );
-
-      navigation.replace("Dashboard");
+      Alert.alert("Sucesso", "Cadastro realizado com sucesso!");
+      navigation.goBack();
     } catch (error) {
-      console.log("REGISTER ERROR:", error);
+      console.log(error);
       Alert.alert("Erro", "Não foi possível conectar ao servidor.");
     }
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Criar conta</Text>
 
       <TextInput
@@ -104,38 +72,32 @@ export default function RegisterScreen({ navigation }: Props) {
         onChangeText={setPassword}
       />
 
-      <View style={styles.preferenceRow}>
-        <Text>Vegetariano</Text>
-        <Switch value={vegetarian} onValueChange={setVegetarian} />
+      <View style={styles.buttonContainer}>
+        <Button title="Cadastrar" onPress={handleRegister} />
       </View>
 
-      <View style={styles.preferenceRow}>
-        <Text>Sem glúten</Text>
-        <Switch value={glutenFree} onValueChange={setGlutenFree} />
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Voltar para login"
+          onPress={() => navigation.goBack()}
+        />
       </View>
-
-      <View style={styles.preferenceRow}>
-        <Text>Sem lactose</Text>
-        <Switch value={lactoseFree} onValueChange={setLactoseFree} />
-      </View>
-
-      <Button title="Cadastrar" onPress={handleRegister} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     padding: 24,
-    backgroundColor: "#fff",
     justifyContent: "center",
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 26,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 32,
   },
   input: {
     borderWidth: 1,
@@ -144,10 +106,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  preferenceRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
+  buttonContainer: {
+    marginTop: 8,
   },
 });

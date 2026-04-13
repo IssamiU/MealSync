@@ -5,6 +5,11 @@ type PlannerState = {
   plannedMeals: PlannedMeal[];
 };
 
+type ClearBySlotPayload = {
+  day: PlannedMeal["day"];
+  mealType: PlannedMeal["mealType"];
+};
+
 const initialState: PlannerState = {
   plannedMeals: [],
 };
@@ -27,18 +32,37 @@ const plannerSlice = createSlice({
 
       state.plannedMeals.push(action.payload);
     },
+
     removePlannedMeal: (state, action: PayloadAction<string>) => {
       state.plannedMeals = state.plannedMeals.filter(
         (meal) => meal.id !== action.payload
       );
     },
+
+    clearPlannedMealBySlot: (
+      state,
+      action: PayloadAction<ClearBySlotPayload>
+    ) => {
+      state.plannedMeals = state.plannedMeals.filter(
+        (meal) =>
+          !(
+            meal.day === action.payload.day &&
+            meal.mealType === action.payload.mealType
+          )
+      );
+    },
+
     clearPlanner: (state) => {
       state.plannedMeals = [];
     },
   },
 });
 
-export const { addPlannedMeal, removePlannedMeal, clearPlanner } =
-  plannerSlice.actions;
+export const {
+  addPlannedMeal,
+  removePlannedMeal,
+  clearPlannedMealBySlot, 
+  clearPlanner,
+} = plannerSlice.actions;
 
 export default plannerSlice.reducer;
