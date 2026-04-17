@@ -1,5 +1,11 @@
 import React from "react";
-import { ActivityIndicator, View, StyleSheet } from "react-native";
+import {
+  ActivityIndicator,
+  View,
+  StyleSheet,
+  Image,
+  Text,
+} from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSelector } from "react-redux";
@@ -12,8 +18,10 @@ import RecipesListScreen from "../screens/recipes/RecipesListScreen";
 import RecipeDetailsScreen from "../screens/recipes/RecipeDetailsScreen";
 import PlannerScreen from "../screens/planner/PlannerScreen";
 import ShoppingListScreen from "../screens/shopping/ShoppingListScreen";
+
 import { RootStackParamList } from "../types/navigation";
 import { RootState } from "../store";
+import { colors } from "../theme/colors";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,7 +33,7 @@ export default function AppNavigator() {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -35,6 +43,20 @@ export default function AppNavigator() {
       <Stack.Navigator
         screenOptions={{
           headerTitleAlign: "center",
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: "#fff",
+          headerShadowVisible: false,
+          headerTitle: () => (
+            <View style={styles.headerContainer}>
+              <Image
+                source={require("../../assets/images/compras.png")}
+                style={styles.logo}
+              />
+              <Text style={styles.headerText}>MealSync</Text>
+            </View>
+          ),
         }}
       >
         {!isAuthenticated ? (
@@ -42,7 +64,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Login"
               component={LoginScreen}
-              options={{ title: "Entrar" }}
+              options={{ headerBackVisible: false }}
             />
             <Stack.Screen
               name="Register"
@@ -55,7 +77,7 @@ export default function AppNavigator() {
             <Stack.Screen
               name="Dashboard"
               component={DashboardScreen}
-              options={{ title: "Comprinhas" }}
+              options={{ headerBackVisible: false }}
             />
             <Stack.Screen
               name="CreateRecipe"
@@ -94,5 +116,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  logo: {
+    width: 30,
+    height: 30,
+    resizeMode: "contain",
+  },
+  headerText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+    marginLeft: 8,
   },
 });

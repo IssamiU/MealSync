@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Alert,
-  Button,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { API_URL } from "../../services/api";
 import { normalizeRecipe } from "../../utils/normalizeRecipe";
+import { colors } from "../../theme/colors";
 
 export default function RecipeDetailsScreen({ route }: any) {
   const { recipeId } = route.params;
@@ -65,7 +66,9 @@ export default function RecipeDetailsScreen({ route }: any) {
   if (!recipe) {
     return (
       <View style={styles.loadingContainer}>
-        <Text>Carregando...</Text>
+        <View style={styles.loadingCard}>
+          <Text style={styles.loadingText}>Carregando...</Text>
+        </View>
       </View>
     );
   }
@@ -75,7 +78,10 @@ export default function RecipeDetailsScreen({ route }: any) {
       <View style={styles.headerCard}>
         <Text style={styles.title}>{recipe.title}</Text>
 
-        <Text style={styles.meta}>Categoria: {recipe.category}</Text>
+        <View style={styles.metaBadge}>
+          <Text style={styles.metaBadgeText}>{recipe.category}</Text>
+        </View>
+
         <Text style={styles.meta}>
           Tempo de preparo: {recipe.prepTimeMinutes} min
         </Text>
@@ -84,25 +90,33 @@ export default function RecipeDetailsScreen({ route }: any) {
           Favorita: {recipe.isFavorite ? "Sim" : "Não"}
         </Text>
 
-        <View style={styles.favoriteButton}>
-          <Button
-            title={
-              recipe.isFavorite
-                ? "Remover dos favoritos"
-                : "Adicionar aos favoritos"
-            }
-            onPress={toggleFavorite}
-          />
-        </View>
+        <Pressable
+          style={[
+            styles.favoriteButton,
+            recipe.isFavorite
+              ? styles.favoriteButtonActive
+              : styles.favoriteButtonDefault,
+          ]}
+          onPress={toggleFavorite}
+        >
+          <Text style={styles.favoriteButtonText}>
+            {recipe.isFavorite
+              ? "Remover dos favoritos"
+              : "Adicionar aos favoritos"}
+          </Text>
+        </Pressable>
       </View>
 
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Ingredientes</Text>
 
         {recipe.ingredients.map((ingredient: any) => (
-          <Text key={ingredient.id} style={styles.itemText}>
-            • {ingredient.name} — {ingredient.quantity} {ingredient.unit}
-          </Text>
+          <View key={ingredient.id} style={styles.listItem}>
+            <Text style={styles.itemBullet}>•</Text>
+            <Text style={styles.itemText}>
+              {ingredient.name} — {ingredient.quantity} {ingredient.unit}
+            </Text>
+          </View>
         ))}
       </View>
 
@@ -110,9 +124,10 @@ export default function RecipeDetailsScreen({ route }: any) {
         <Text style={styles.sectionTitle}>Modo de preparo</Text>
 
         {recipe.steps.map((step: any, index: number) => (
-          <Text key={step.id} style={styles.itemText}>
-            {index + 1}. {step.description}
-          </Text>
+          <View key={step.id} style={styles.listItem}>
+            <Text style={styles.stepNumber}>{index + 1}.</Text>
+            <Text style={styles.itemText}>{step.description}</Text>
+          </View>
         ))}
       </View>
     </ScrollView>
@@ -121,50 +136,120 @@ export default function RecipeDetailsScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    backgroundColor: "#f5f5f5",
+    padding: 20,
+    backgroundColor: colors.background,
+    paddingBottom: 24,
   },
   headerCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 18,
+    padding: 18,
     marginBottom: 16,
-    elevation: 2,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   sectionCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    elevation: 2,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "700",
     marginBottom: 12,
+    color: colors.textPrimary,
+  },
+  metaBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: colors.primaryLight,
+    borderWidth: 0,
+    borderColor: colors.primary,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  },
+  metaBadgeText: {
+    color: colors.primaryDark,
+    fontWeight: "700",
+    fontSize: 13,
   },
   meta: {
     fontSize: 16,
     marginBottom: 6,
-    color: "#333",
+    color: colors.textSecondary,
+    lineHeight: 22,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    marginBottom: 12,
+    marginBottom: 14,
+    color: colors.textPrimary,
+  },
+  listItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  itemBullet: {
+    fontSize: 18,
+    color: colors.primary,
+    marginRight: 8,
+    lineHeight: 24,
+    fontWeight: "700",
+  },
+  stepNumber: {
+    fontSize: 16,
+    color: colors.primary,
+    marginRight: 8,
+    lineHeight: 22,
+    fontWeight: "700",
+    minWidth: 22,
   },
   itemText: {
+    flex: 1,
     fontSize: 16,
-    marginBottom: 10,
     lineHeight: 22,
-    color: "#333",
+    color: colors.textSecondary,
   },
   favoriteButton: {
-    marginTop: 12,
+    marginTop: 14,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  favoriteButtonDefault: {
+    backgroundColor: colors.primary,
+  },
+  favoriteButtonActive: {
+    backgroundColor: colors.danger,
+  },
+  favoriteButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: colors.background,
+    padding: 20,
+  },
+  loadingCard: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 28,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.textPrimary,
   },
 });

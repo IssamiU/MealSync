@@ -1,17 +1,24 @@
 import React, { useState } from "react";
 import {
   Alert,
-  Button,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { useDispatch } from "react-redux";
 
 import { signIn } from "../../store/slices/authSlice";
 import { saveAuth } from "../../storage/authStorage";
 import { API_URL } from "../../services/api";
+import { colors } from "../../theme/colors";
 
 export default function LoginScreen({ navigation }: any) {
   const dispatch = useDispatch();
@@ -31,7 +38,10 @@ export default function LoginScreen({ navigation }: any) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
       });
 
       const data = await response.json();
@@ -49,7 +59,6 @@ export default function LoginScreen({ navigation }: any) {
 
       await saveAuth(authData);
       dispatch(signIn(authData));
-
     } catch (error) {
       console.log(error);
       Alert.alert("Erro", "Não foi possível conectar ao servidor.");
@@ -57,61 +66,134 @@ export default function LoginScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>APP COMPRINHAS</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            <Image
+              source={require("../../../assets/images/compras.png")}
+              style={styles.logo}
+            />
 
-      <TextInput
-        style={styles.input}
-        placeholder="E-mail"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
+            <Text style={styles.title}>MealSync</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Senha"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+            <Text style={styles.subtitle}>
+              Organize suas receitas, seu planejamento e sua lista de compras.
+            </Text>
 
-      <View style={styles.buttonContainer}>
-        <Button title="Entrar" onPress={handleLogin} />
-      </View>
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-      <View style={styles.buttonContainer}>
-        <Button
-          title="Ir para cadastro"
-          onPress={() => navigation.navigate("Register")}
-        />
-      </View>
-    </View>
+            <TextInput
+              style={styles.input}
+              placeholder="Senha"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            <Pressable style={styles.primaryButton} onPress={handleLogin}>
+              <Text style={styles.primaryButtonText}>Entrar</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => navigation.navigate("Register")}
+            >
+              <Text style={styles.secondaryButtonText}>Ir para cadastro</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 24,
+    backgroundColor: colors.background,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: "center",
-    backgroundColor: "#fff",
+    padding: 24,
+  },
+  card: {
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 32,
+    marginBottom: 10,
+    color: colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: 15,
+    textAlign: "center",
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginBottom: 24,
   },
   input: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 14,
+    color: colors.textPrimary,
   },
-  buttonContainer: {
+  primaryButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
     marginTop: 8,
+    marginBottom: 10,
+  },
+  primaryButtonText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  secondaryButton: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  secondaryButtonText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: "center",
+    marginBottom: 16,
+    resizeMode: "contain",
   },
 });

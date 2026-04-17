@@ -16,6 +16,7 @@ import { setRecipes } from "../../store/slices/recipesSlice";
 import { normalizeRecipe } from "../../utils/normalizeRecipe";
 import { API_URL } from "../../services/api";
 import { removeAuth } from "../../storage/authStorage";
+import { colors } from "../../theme/colors";
 
 export default function DashboardScreen({ navigation }: any) {
   const dispatch = useDispatch();
@@ -150,27 +151,33 @@ export default function DashboardScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.background,
+    flexGrow: 1,
   },
   header: {
     marginBottom: 20,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 0,
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
     marginBottom: 6,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   subtitle: {
     fontSize: 17,
-    color: "#4b5563",
+    color: colors.textSecondary,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
     marginTop: 8,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   metricsGrid: {
     flexDirection: "row",
@@ -180,51 +187,54 @@ const styles = StyleSheet.create({
   },
   metricCard: {
     width: "48%",
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderRadius: 14,
     paddingVertical: 18,
     paddingHorizontal: 14,
     marginBottom: 12,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   metricNumber: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#111827",
+    color: colors.primary,
     marginBottom: 6,
   },
   metricLabel: {
     fontSize: 14,
-    color: "#4b5563",
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   actionsContainer: {
     marginBottom: 24,
   },
   actionCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   actionTitle: {
     fontSize: 17,
     fontWeight: "700",
     marginBottom: 6,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   actionDescription: {
     fontSize: 14,
-    color: "#4b5563",
+    color: colors.textSecondary,
     lineHeight: 20,
   },
   logoutButton: {
-    backgroundColor: "#dc2626",
+    backgroundColor: colors.primaryDark,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 4,
+    marginBottom: 12,
   },
   logoutButtonText: {
     color: "#ffffff",

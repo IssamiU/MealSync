@@ -24,6 +24,7 @@ import {
 import { RootStackParamList } from "../../types/navigation";
 import { ShoppingListItem } from "../../types/shopping";
 import { generateShoppingListFromPlanner } from "../../utils/generateShoppingList";
+import { colors } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<RootStackParamList, "ShoppingList">;
 
@@ -157,89 +158,97 @@ export default function ShoppingListScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Lista de compras</Text>
-      <Text style={styles.subtitle}>
-        Gere sua lista com base no planejamento ou adicione itens manualmente.
-      </Text>
+      <FlatList
+        style={styles.list}
+        data={shoppingItems}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <>
+            <View style={styles.headerCard}>
+              <Text style={styles.title}>Lista de compras</Text>
+              <Text style={styles.subtitle}>
+                Gere sua lista com base no planejamento ou adicione itens
+                manualmente.
+              </Text>
+            </View>
 
-      <Text style={styles.sectionTitle}>Ações rápidas</Text>
+            <Text style={styles.sectionTitle}>Ações rápidas</Text>
 
-      <View style={styles.actionsContainer}>
-        <Pressable style={styles.actionCard} onPress={handleGenerateList}>
-          <Text style={styles.actionTitle}>Gerar lista automaticamente</Text>
-          <Text style={styles.actionDescription}>
-            Usa o planejamento semanal para montar a lista de compras.
-          </Text>
-        </Pressable>
-
-        <Pressable style={styles.actionCard} onPress={openAddModal}>
-          <Text style={styles.actionTitle}>Adicionar item manualmente</Text>
-          <Text style={styles.actionDescription}>
-            Inclua um item avulso que não veio do planejamento.
-          </Text>
-        </Pressable>
-
-        <Pressable style={styles.actionCard} onPress={handleClearList}>
-          <Text style={styles.actionTitle}>Limpar lista</Text>
-          <Text style={styles.actionDescription}>
-            Remove todos os itens atuais da sua lista de compras.
-          </Text>
-        </Pressable>
-      </View>
-
-      <Text style={styles.sectionTitle}>Itens</Text>
-
-      {shoppingItems.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>Lista vazia</Text>
-          <Text style={styles.emptyText}>
-            Gere a lista ou adicione itens manualmente.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={shoppingItems}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <View
-              style={[
-                styles.card,
-                item.checked ? styles.checkedCard : undefined,
-              ]}
-            >
-              <Pressable
-                style={styles.itemInfoArea}
-                onPress={() => dispatch(toggleShoppingListItem(item.id))}
-              >
-                <Text style={styles.itemTitle}>
-                  {item.checked ? "✓ " : "○ "}
-                  {item.name}
-                </Text>
-                <Text style={styles.itemInfo}>
-                  {item.quantity} {item.unit}
+            <View style={styles.actionsContainer}>
+              <Pressable style={styles.actionCard} onPress={handleGenerateList}>
+                <Text style={styles.actionTitle}>Gerar lista automaticamente</Text>
+                <Text style={styles.actionDescription}>
+                  Usa o planejamento semanal para montar a lista de compras.
                 </Text>
               </Pressable>
 
-              <View style={styles.buttonsRow}>
-                <Pressable
-                  style={styles.editButton}
-                  onPress={() => openEditModal(item)}
-                >
-                  <Text style={styles.buttonText}>Editar</Text>
-                </Pressable>
+              <Pressable style={styles.actionCard} onPress={openAddModal}>
+                <Text style={styles.actionTitle}>Adicionar item manualmente</Text>
+                <Text style={styles.actionDescription}>
+                  Inclua um item avulso que não veio do planejamento.
+                </Text>
+              </Pressable>
 
-                <Pressable
-                  style={styles.removeButton}
-                  onPress={() => handleRemoveItem(item.id)}
-                >
-                  <Text style={styles.buttonText}>Remover</Text>
-                </Pressable>
-              </View>
+              <Pressable style={styles.actionCard} onPress={handleClearList}>
+                <Text style={styles.actionTitle}>Limpar lista</Text>
+                <Text style={styles.actionDescription}>
+                  Remove todos os itens atuais da sua lista de compras.
+                </Text>
+              </Pressable>
             </View>
-          )}
-        />
-      )}
+
+            <Text style={styles.sectionTitle}>Itens</Text>
+
+            {shoppingItems.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyTitle}>Lista vazia</Text>
+                <Text style={styles.emptyText}>
+                  Gere a lista ou adicione itens manualmente.
+                </Text>
+              </View>
+            )}
+          </>
+        }
+        renderItem={({ item }) => (
+          <View
+            style={[
+              styles.card,
+              item.checked ? styles.checkedCard : undefined,
+            ]}
+          >
+            <Pressable
+              style={styles.itemInfoArea}
+              onPress={() => dispatch(toggleShoppingListItem(item.id))}
+            >
+              <Text style={styles.itemTitle}>
+                {item.checked ? "✓ " : "○ "}
+                {item.name}
+              </Text>
+              <Text style={styles.itemInfo}>
+                {item.quantity} {item.unit}
+              </Text>
+            </Pressable>
+
+            <View style={styles.buttonsRow}>
+              <Pressable
+                style={styles.editButton}
+                onPress={() => openEditModal(item)}
+              >
+                <Text style={styles.buttonText}>Editar</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.removeButton}
+                onPress={() => handleRemoveItem(item.id)}
+              >
+                <Text style={styles.buttonText}>Remover</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+        ListEmptyComponent={null}
+      />
 
       <Modal visible={isModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
@@ -251,6 +260,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Nome"
+              placeholderTextColor={colors.textSecondary}
               value={name}
               onChangeText={setName}
             />
@@ -258,6 +268,7 @@ export default function ShoppingListScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Quantidade"
+              placeholderTextColor={colors.textSecondary}
               keyboardType="numeric"
               value={quantity}
               onChangeText={setQuantity}
@@ -266,15 +277,22 @@ export default function ShoppingListScreen({ navigation }: Props) {
             <TextInput
               style={styles.input}
               placeholder="Unidade"
+              placeholderTextColor={colors.textSecondary}
               value={unit}
               onChangeText={setUnit}
             />
 
-            <Pressable style={styles.modalPrimaryButton} onPress={handleSaveItem}>
+            <Pressable
+              style={styles.modalPrimaryButton}
+              onPress={handleSaveItem}
+            >
               <Text style={styles.modalPrimaryButtonText}>Salvar</Text>
             </Pressable>
 
-            <Pressable style={styles.modalSecondaryButton} onPress={closeModal}>
+            <Pressable
+              style={styles.modalSecondaryButton}
+              onPress={closeModal}
+            >
               <Text style={styles.modalSecondaryButtonText}>Cancelar</Text>
             </Pressable>
           </View>
@@ -287,60 +305,71 @@ export default function ShoppingListScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.background,
     padding: 20,
+  },
+  headerCard: {
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 0,
+    borderColor: colors.border,
+    marginBottom: 20,
+    justifyContent: "space-between",
+    alignItems: "center"
+
   },
   title: {
     fontSize: 28,
     fontWeight: "700",
     marginBottom: 6,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   subtitle: {
     fontSize: 16,
-    color: "#4b5563",
-    marginBottom: 20,
+    color: colors.textSecondary,
     lineHeight: 22,
+    justifyContent: "space-between",
+    alignItems: "center",
+    textAlign: "center",
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   actionsContainer: {
     marginBottom: 20,
   },
   actionCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surfaceAlt,
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   actionTitle: {
     fontSize: 17,
     fontWeight: "700",
     marginBottom: 6,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   actionDescription: {
     fontSize: 14,
-    color: "#4b5563",
+    color: colors.textSecondary,
     lineHeight: 20,
   },
-  listContent: {
-    paddingBottom: 12,
-  },
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
-    elevation: 2,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   checkedCard: {
-    opacity: 0.6,
+    opacity: 0.65,
   },
   itemInfoArea: {
     marginBottom: 12,
@@ -349,10 +378,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 6,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   itemInfo: {
-    color: "#444",
+    color: colors.textSecondary,
+    fontSize: 14,
   },
   buttonsRow: {
     flexDirection: "row",
@@ -360,79 +390,74 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editButton: {
-    backgroundColor: "#2563eb",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
   },
   removeButton: {
-    backgroundColor: "#dc2626",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    backgroundColor: colors.danger,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
   },
   buttonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 32,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 14,
+    borderWidth: 0,
+    borderColor: colors.border,
   },
   emptyTitle: {
     fontSize: 22,
     fontWeight: "700",
     marginBottom: 8,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   emptyText: {
-    color: "#555",
+    color: colors.textSecondary,
     textAlign: "center",
     marginTop: 6,
     lineHeight: 22,
   },
-  backButton: {
-    backgroundColor: "#111827",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  backButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(59, 47, 47, 0.35)",
     justifyContent: "center",
     padding: 20,
   },
   modalCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 18,
     padding: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
-    color: "#111827",
+    color: colors.textPrimary,
   },
   input: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
+    borderColor: colors.border,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    color: colors.textPrimary,
   },
   modalPrimaryButton: {
-    backgroundColor: "#2563eb",
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 13,
     alignItems: "center",
     marginTop: 8,
     marginBottom: 10,
@@ -443,14 +468,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   modalSecondaryButton: {
-    backgroundColor: "#e5e7eb",
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    paddingVertical: 13,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   modalSecondaryButtonText: {
-    color: "#111827",
+    color: colors.textPrimary,
     fontWeight: "700",
     fontSize: 15,
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    paddingBottom: 24,
   },
 });
