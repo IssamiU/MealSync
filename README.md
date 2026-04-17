@@ -1,4 +1,4 @@
-# APP COMPRINHAS
+# APP MealSync
 
 Aplicativo mobile de planejamento alimentar e lista de compras desenvolvido com **React Native + Expo**, permitindo ao usuário organizar receitas, planejar refeições semanais e gerar listas de compras automaticamente.
 
