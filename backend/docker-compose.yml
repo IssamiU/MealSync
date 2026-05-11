@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: comprinhas_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: comprinhas_user
+      POSTGRES_PASSWORD: comprinhas_pass
+      POSTGRES_DB: comprinhas_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: comprinhas_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  postgres_data:
+  mongo_data:
