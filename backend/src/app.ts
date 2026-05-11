@@ -3,6 +3,7 @@ import cors from "cors";
 
 import recipeRoutes from "./routes/recipeRoutes";
 import authRoutes from "./routes/authRoutes";
+import historyRoutes from "./routes/historyRoutes";
 
 const app = express();
 
@@ -15,4 +16,6 @@ app.get("/", (_req, res) => {
 
 app.use("/auth", authRoutes);
 app.use("/recipes", recipeRoutes);
+app.use("/history", historyRoutes); 
+
 export default app;

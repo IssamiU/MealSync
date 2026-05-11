@@ -1,4 +1,9 @@
-export type MealType = "Café da manhã" | "Almoço" | "Jantar";
+export type MealType =
+  | "Café da manhã"
+  | "Almoço"
+  | "Lanche"
+  | "Jantar"
+  | "Outros";
 
 export type WeekDay =
   | "Segunda"
@@ -14,4 +19,9 @@ export type PlannedMeal = {
   day: WeekDay;
   mealType: MealType;
   recipeId: string;
+  reminderTime?: {
+    hour: number;
+    minute: number;
+    notificationId: string; // para cancelar/substituir ao editar
+  } | null;
 };

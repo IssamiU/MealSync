@@ -8,6 +8,8 @@ export type RecipeIngredient = {
 export type RecipeStep = {
   id: string;
   description: string;
+  hasTimer: boolean; 
+  duration?: number | null;
 };
 
 export type RecipeCategory =

@@ -10,6 +10,11 @@ type ClearBySlotPayload = {
   mealType: PlannedMeal["mealType"];
 };
 
+type UpdateReminderPayload = {
+  mealId: string;
+  reminderTime: PlannedMeal["reminderTime"];
+};
+
 const initialState: PlannerState = {
   plannedMeals: [],
 };
@@ -19,17 +24,6 @@ const plannerSlice = createSlice({
   initialState,
   reducers: {
     addPlannedMeal: (state, action: PayloadAction<PlannedMeal>) => {
-      const alreadyExists = state.plannedMeals.find(
-        (meal) =>
-          meal.day === action.payload.day &&
-          meal.mealType === action.payload.mealType
-      );
-
-      if (alreadyExists) {
-        alreadyExists.recipeId = action.payload.recipeId;
-        return;
-      }
-
       state.plannedMeals.push(action.payload);
     },
 
@@ -39,21 +33,23 @@ const plannerSlice = createSlice({
       );
     },
 
-    clearPlannedMealBySlot: (
-      state,
-      action: PayloadAction<ClearBySlotPayload>
-    ) => {
+    clearPlannedMealBySlot: (state, action: PayloadAction<ClearBySlotPayload>) => {
       state.plannedMeals = state.plannedMeals.filter(
         (meal) =>
-          !(
-            meal.day === action.payload.day &&
-            meal.mealType === action.payload.mealType
-          )
+          !(meal.day === action.payload.day && meal.mealType === action.payload.mealType)
       );
     },
 
     clearPlanner: (state) => {
       state.plannedMeals = [];
+    },
+
+    // RF27 — atualiza o lembrete de uma refeição específica
+    updateMealReminder: (state, action: PayloadAction<UpdateReminderPayload>) => {
+      const meal = state.plannedMeals.find((m) => m.id === action.payload.mealId);
+      if (meal) {
+        meal.reminderTime = action.payload.reminderTime;
+      }
     },
   },
 });
@@ -61,8 +57,9 @@ const plannerSlice = createSlice({
 export const {
   addPlannedMeal,
   removePlannedMeal,
-  clearPlannedMealBySlot, 
+  clearPlannedMealBySlot,
   clearPlanner,
+  updateMealReminder,
 } = plannerSlice.actions;
 
 export default plannerSlice.reducer;

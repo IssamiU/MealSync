@@ -10,6 +10,8 @@ interface Ingredient {
 interface Step {
   id: string;
   description: string;
+  hasTimer: boolean;  // true = passo tem timer
+  duration?: number;  // minutos — só relevante se hasTimer = true
 }
 
 export interface IRecipe extends Document {
@@ -35,6 +37,8 @@ const IngredientSchema = new Schema<Ingredient>({
 const StepSchema = new Schema<Step>({
   id: String,
   description: String,
+  hasTimer: { type: Boolean, default: false }, 
+  duration: { type: Number, default: null }, 
 });
 
 const RecipeSchema = new Schema<IRecipe>({

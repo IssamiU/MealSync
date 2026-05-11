@@ -13,7 +13,6 @@ function normalizeCategory(category: string): RecipeCategory {
   if (validCategories.includes(category as RecipeCategory)) {
     return category as RecipeCategory;
   }
-
   return "Outro";
 }
 
@@ -37,6 +36,8 @@ export function normalizeRecipe(data: any): Recipe {
     steps: (data.steps ?? []).map((step: any, index: number) => ({
       id: step.id ?? `${recipeId}-step-${index}`,
       description: step.description ?? "",
+      hasTimer: step.hasTimer ?? false, 
+      duration: step.duration ?? null,
     })),
   };
 }

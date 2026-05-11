@@ -5,3 +5,10 @@ export type ShoppingListItem = {
   unit: string;
   checked: boolean;
 };
+
+export type ShoppingList = {
+  id: string;
+  name: string;
+  createdAt: string; // ISO string
+  items: ShoppingListItem[];
+};

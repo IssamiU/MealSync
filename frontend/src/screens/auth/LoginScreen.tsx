@@ -35,9 +35,7 @@ export default function LoginScreen({ navigation }: any) {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
           password,
@@ -96,6 +94,7 @@ export default function LoginScreen({ navigation }: any) {
               keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
+              returnKeyType="next"
             />
 
             <TextInput
@@ -105,7 +104,17 @@ export default function LoginScreen({ navigation }: any) {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+              returnKeyType="done"
+              onSubmitEditing={handleLogin}
             />
+
+            {/* RF29 — link para recuperação de senha */}
+            <Pressable
+              style={styles.forgotButton}
+              onPress={() => navigation.navigate("ForgotPassword")}
+            >
+              <Text style={styles.forgotButtonText}>Esqueceu a senha?</Text>
+            </Pressable>
 
             <Pressable style={styles.primaryButton} onPress={handleLogin}>
               <Text style={styles.primaryButtonText}>Entrar</Text>
@@ -125,35 +134,12 @@ export default function LoginScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-  },
-  card: {
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 0,
-    borderColor: colors.border,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 10,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 15,
-    textAlign: "center",
-    color: colors.textSecondary,
-    lineHeight: 22,
-    marginBottom: 24,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  scrollContainer: { flexGrow: 1, justifyContent: "center", padding: 24 },
+  card: { borderRadius: 20, padding: 24 },
+  logo: { width: 100, height: 100, alignSelf: "center", marginBottom: 16, resizeMode: "contain" },
+  title: { fontSize: 28, fontWeight: "700", textAlign: "center", marginBottom: 10, color: colors.textPrimary },
+  subtitle: { fontSize: 15, textAlign: "center", color: colors.textSecondary, lineHeight: 22, marginBottom: 24 },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -163,37 +149,11 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     color: colors.textPrimary,
   },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 10,
-  },
-  primaryButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  secondaryButton: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  secondaryButtonText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    alignSelf: "center",
-    marginBottom: 16,
-    resizeMode: "contain",
-  },
+  // RF29 — link esqueceu a senha
+  forgotButton: { alignSelf: "flex-end", marginBottom: 16, marginTop: -4 },
+  forgotButtonText: { color: colors.primary, fontSize: 13, fontWeight: "600" },
+  primaryButton: { backgroundColor: colors.primary, borderRadius: 12, paddingVertical: 14, alignItems: "center", marginBottom: 10 },
+  primaryButtonText: { color: "#ffffff", fontSize: 16, fontWeight: "700" },
+  secondaryButton: { backgroundColor: colors.surface, borderRadius: 12, paddingVertical: 14, alignItems: "center", borderWidth: 1, borderColor: colors.border },
+  secondaryButtonText: { color: colors.textPrimary, fontSize: 16, fontWeight: "700" },
 });

@@ -1,404 +1,420 @@
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { API_URL } from "../../services/api";
+import { getAuth } from "../../storage/authStorage";
 import { colors } from "../../theme/colors";
 
-export default function CreateRecipeScreen({ navigation }: any) {
-  const [title, setTitle] = useState("");
-  const [prepTimeMinutes, setPrepTimeMinutes] = useState("");
-  const [servings, setServings] = useState("");
-  const [category, setCategory] = useState("Outro");
+const CATEGORIES = ["Café da manhã", "Almoço", "Lanche", "Jantar", "Sobremesa", "Outro"];
 
-  const [ingredients, setIngredients] = useState([
-    { id: Date.now().toString(), name: "", quantity: "", unit: "" },
-  ]);
+const UNITS = [
+  "g", "kg", "ml", "l", "xícara", "colher de sopa",
+  "colher de chá", "unidade", "dente", "pitada", "a gosto",
+  "fatia", "folha", "ramo",
+];
 
-  const [steps, setSteps] = useState([
-    { id: Date.now().toString() + "-step", description: "" },
-  ]);
+const uid = () => Math.random().toString(36).slice(2, 9);
 
-  function handleIngredientChange(id: string, field: string, value: string) {
-    setIngredients((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  }
+interface Ingredient { id: string; qty: string; unit: string; name: string; }
+interface Step { id: string; text: string; hasTimer: boolean; }
 
-  function addIngredient() {
-    setIngredients((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString() + Math.random(),
-        name: "",
-        quantity: "",
-        unit: "",
-      },
-    ]);
-  }
+export default function CreateRecipeScreen({ navigation, route }: any) {
+  const prefill = route?.params?.prefill;
+  const isPrefilled = !!prefill;
 
-  function removeIngredient(id: string) {
-    if (ingredients.length === 1) {
-      Alert.alert("Atenção", "Precisa de pelo menos 1 ingrediente.");
-      return;
-    }
+  const [isPublic, setIsPublic] = useState(false);
+  const [title, setTitle] = useState(prefill?.title ?? "");
+  const [category, setCategory] = useState<string>(prefill?.category ?? "");
+  const [prepTime, setPrepTime] = useState(prefill?.prepTimeMinutes ? String(prefill.prepTimeMinutes) : "");
+  const [servings, setServings] = useState(prefill?.servings ? String(prefill.servings) : "");
 
-    setIngredients((prev) => prev.filter((i) => i.id !== id));
-  }
+  const [ingredients, setIngredients] = useState<Ingredient[]>(
+    prefill?.ingredients?.length
+      ? prefill.ingredients.map((i: any) => ({
+          id: uid(), qty: String(i.quantity ?? ""), unit: i.unit ?? UNITS[0], name: i.name ?? "",
+        }))
+      : [{ id: uid(), qty: "", unit: UNITS[0], name: "" }]
+  );
 
-  function handleStepChange(id: string, value: string) {
-    setSteps((prev) =>
-      prev.map((step) =>
-        step.id === id ? { ...step, description: value } : step
-      )
-    );
-  }
+  const [steps, setSteps] = useState<Step[]>(
+    prefill?.steps?.length
+      ? prefill.steps.map((s: any) => ({ id: uid(), text: s.description ?? "", hasTimer: s.hasTimer ?? false }))
+      : [{ id: uid(), text: "", hasTimer: false }]
+  );
 
-  function addStep() {
-    setSteps((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString() + Math.random(),
-        description: "",
-      },
-    ]);
-  }
+  const [unitPickerFor, setUnitPickerFor] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function removeStep(id: string) {
-    if (steps.length === 1) {
-      Alert.alert("Atenção", "Precisa de pelo menos 1 passo.");
-      return;
-    }
+  // Ingredientes
+  function addIngredient() { setIngredients((a) => [...a, { id: uid(), qty: "", unit: UNITS[0], name: "" }]); }
+  function removeIngredient(id: string) { setIngredients((a) => a.length === 1 ? a : a.filter((i) => i.id !== id)); }
+  function updateIngredient(id: string, patch: Partial<Ingredient>) { setIngredients((a) => a.map((i) => i.id === id ? { ...i, ...patch } : i)); }
 
-    setSteps((prev) => prev.filter((s) => s.id !== id));
-  }
+  // Passos
+  function addStep() { setSteps((a) => [...a, { id: uid(), text: "", hasTimer: false }]); }
+  function removeStep(id: string) { setSteps((a) => a.length === 1 ? a : a.filter((s) => s.id !== id)); }
+  function updateStep(id: string, patch: Partial<Step>) { setSteps((a) => a.map((s) => s.id === id ? { ...s, ...patch } : s)); }
 
   async function handleSave() {
-    if (!title.trim() || !prepTimeMinutes || !servings) {
-      Alert.alert("Atenção", "Preencha os campos principais.");
-      return;
-    }
+    if (!title.trim()) { Alert.alert("Atenção", "Informe o título da receita."); return; }
+    if (!category) { Alert.alert("Atenção", "Escolha uma categoria."); return; }
+    if (!prepTime || !servings) { Alert.alert("Atenção", "Informe o tempo de preparo e as porções."); return; }
 
-    const validIngredients = ingredients.filter(
-      (i) => i.name && i.quantity && i.unit
-    );
+    const validIngredients = ingredients.filter((i) => i.name && i.qty && i.unit);
+    const validSteps = steps.filter((s) => s.text.trim());
 
-    const validSteps = steps.filter((s) => s.description);
-
-    if (validIngredients.length === 0) {
-      Alert.alert("Atenção", "Adicione ingredientes válidos.");
-      return;
-    }
-
-    if (validSteps.length === 0) {
-      Alert.alert("Atenção", "Adicione passos válidos.");
-      return;
-    }
+    if (validIngredients.length === 0) { Alert.alert("Atenção", "Adicione pelo menos um ingrediente."); return; }
+    if (validSteps.length === 0) { Alert.alert("Atenção", "Adicione pelo menos um passo."); return; }
 
     try {
+      setSaving(true);
+      const auth = await getAuth();
+      if (!auth) { Alert.alert("Erro", "Sessão expirada."); return; }
+
       const response = await fetch(`${API_URL}/recipes`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
         body: JSON.stringify({
-          title,
+          title: title.trim(),
           category,
-          prepTimeMinutes: Number(prepTimeMinutes),
+          prepTimeMinutes: Number(prepTime),
           servings: Number(servings),
-          ingredients: validIngredients.map((i, index) => ({
-            id: `${Date.now()}-ingredient-${index}`,
+          isPublic,
+          imageUrl: "",
+          ingredients: validIngredients.map((i, idx) => ({
+            id: `${Date.now()}-ingredient-${idx}`,
             name: i.name,
-            quantity: Number(i.quantity),
+            quantity: Number(i.qty),
             unit: i.unit,
           })),
-          steps: validSteps.map((s, index) => ({
-            id: `${Date.now()}-step-${index}`,
-            description: s.description,
+          steps: validSteps.map((s, idx) => ({
+            id: `${Date.now()}-step-${idx}`,
+            description: s.text,
+            hasTimer: s.hasTimer,
+            duration: null,
           })),
-          imageUrl: "",
-          userId: "123",
+          userId: String(auth.user.id),
         }),
       });
 
-      if (!response.ok) throw new Error();
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Erro ao salvar receita");
 
-      Alert.alert("Sucesso", "Receita criada!");
-      navigation.goBack();
-    } catch (error) {
-      console.log(error);
-      Alert.alert("Erro", "Erro ao salvar receita.");
+      Alert.alert("Sucesso", isPrefilled ? "Cópia salva!" : "Receita criada!", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Erro ao salvar receita.");
+    } finally {
+      setSaving(false);
     }
   }
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAwareScrollView
-        style={styles.keyboardContainer}
-        contentContainerStyle={styles.container}
-        enableOnAndroid
-        extraScrollHeight={200}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable style={styles.headerBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>{isPrefilled ? "Editar cópia" : "Nova Receita"}</Text>
+        <View style={styles.headerBtn} />
+      </View>
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Toggle pública */}
+          <View style={[styles.card, { marginTop: 16 }]}>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={styles.toggleTitle}>Receita pública</Text>
+                <Text style={styles.toggleHint}>Outros usuários podem encontrar esta receita</Text>
+              </View>
+              <Switch
+                value={isPublic}
+                onValueChange={setIsPublic}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+          </View>
+
+          {/* Informações básicas */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>INFORMAÇÕES BÁSICAS</Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.fieldLabel}>Título</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: Strogonoff de frango"
+              placeholderTextColor={colors.textMuted}
+              value={title}
+              onChangeText={setTitle}
+              returnKeyType="next"
+            />
+
+            <Text style={styles.fieldLabel}>Categoria</Text>
+            <View style={styles.chipsWrap}>
+              {CATEGORIES.map((c) => (
+                <Pressable
+                  key={c}
+                  style={[styles.chip, category === c && styles.chipActive]}
+                  onPress={() => setCategory(c)}
+                >
+                  <Text style={[styles.chipText, category === c && styles.chipTextActive]}>{c}</Text>
+                </Pressable>
+              ))}
+            </View>
+
+            <View style={styles.rowGap}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Tempo (min)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="30"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numeric"
+                  value={prepTime}
+                  onChangeText={setPrepTime}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.fieldLabel}>Porções</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="4"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="numeric"
+                  value={servings}
+                  onChangeText={setServings}
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Ingredientes */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>INGREDIENTES</Text>
+            <Pressable style={styles.addBtn} onPress={addIngredient}>
+              <Feather name="plus" size={15} color={colors.primary} />
+              <Text style={styles.addBtnText}>Adicionar</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.card}>
+            {ingredients.map((ing, idx) => (
+              <View
+                key={ing.id}
+                style={[styles.ingredientItem, idx < ingredients.length - 1 && styles.itemDivider]}
+              >
+                <View style={styles.ingredientGrid}>
+                  <TextInput
+                    style={[styles.input, { flex: 0.9 }]}
+                    placeholder="Qtd"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="numeric"
+                    value={ing.qty}
+                    onChangeText={(v) => updateIngredient(ing.id, { qty: v })}
+                  />
+                  <Pressable
+                    style={[styles.input, styles.selectInput, { flex: 1.4 }]}
+                    onPress={() => setUnitPickerFor(ing.id)}
+                  >
+                    <Text style={[styles.selectText, !ing.unit && { color: colors.textMuted }]} numberOfLines={1}>
+                      {ing.unit || "Unidade"}
+                    </Text>
+                    <Feather name="chevron-down" size={15} color={colors.textMuted} />
+                  </Pressable>
+                  <Pressable style={styles.trashBtn} onPress={() => removeIngredient(ing.id)}>
+                    <Feather name="trash-2" size={16} color={colors.danger} />
+                  </Pressable>
+                </View>
+                <TextInput
+                  style={[styles.input, { marginTop: 8 }]}
+                  placeholder="Nome do ingrediente"
+                  placeholderTextColor={colors.textMuted}
+                  value={ing.name}
+                  onChangeText={(v) => updateIngredient(ing.id, { name: v })}
+                />
+              </View>
+            ))}
+          </View>
+
+          {/* Passos */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>MODO DE PREPARO</Text>
+            <Pressable style={styles.addBtn} onPress={addStep}>
+              <Feather name="plus" size={15} color={colors.primary} />
+              <Text style={styles.addBtnText}>Adicionar</Text>
+            </Pressable>
+          </View>
+
+          {steps.map((step, idx) => (
+            <View key={step.id} style={[styles.card, { marginBottom: 10 }]}>
+              <View style={styles.stepHeader}>
+                <View style={styles.stepNumber}>
+                  <Text style={styles.stepNumberText}>{idx + 1}</Text>
+                </View>
+                <Text style={styles.stepTitle}>Passo {idx + 1}</Text>
+                <Pressable style={styles.trashBtn} onPress={() => removeStep(step.id)}>
+                  <Feather name="trash-2" size={16} color={colors.danger} />
+                </Pressable>
+              </View>
+
+              <TextInput
+                style={[styles.input, styles.textarea]}
+                placeholder="Descreva o passo..."
+                placeholderTextColor={colors.textMuted}
+                value={step.text}
+                onChangeText={(v) => updateStep(step.id, { text: v })}
+                multiline
+                textAlignVertical="top"
+              />
+
+              <View style={styles.timerToggleRow}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="time-outline" size={18} color={colors.textSecondary} />
+                  <View>
+                    <Text style={styles.toggleTitle}>Tem timer?</Text>
+                    <Text style={styles.toggleHint}>O tempo é definido na hora de cozinhar</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={step.hasTimer}
+                  onValueChange={(v) => updateStep(step.id, { hasTimer: v })}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor="#fff"
+                />
+              </View>
+            </View>
+          ))}
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* CTA fixo */}
+      <View style={styles.ctaBar}>
+        <Pressable
+          style={[styles.ctaBtn, saving && { opacity: 0.7 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Feather name="check" size={18} color="#fff" />
+          <Text style={styles.ctaBtnText}>{saving ? "Salvando..." : isPrefilled ? "Salvar cópia" : "Salvar Receita"}</Text>
+        </Pressable>
+      </View>
+
+      {/* Modal unidade */}
+      <Modal
+        visible={!!unitPickerFor}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setUnitPickerFor(null)}
       >
-        <View style={styles.headerCard}>
-          <Text style={styles.title}>Nova Receita</Text>
-          <Text style={styles.subtitle}>
-            Preencha os detalhes para criar sua receita personalizada.
-          </Text>
+        <Pressable style={styles.modalBackdrop} onPress={() => setUnitPickerFor(null)} />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHandle} />
+          <Text style={styles.modalTitle}>Selecione a unidade</Text>
+          <ScrollView style={{ maxHeight: 360 }} showsVerticalScrollIndicator={false}>
+            {UNITS.map((u) => (
+              <Pressable
+                key={u}
+                style={styles.modalOption}
+                onPress={() => {
+                  if (unitPickerFor) updateIngredient(unitPickerFor, { unit: u });
+                  setUnitPickerFor(null);
+                }}
+              >
+                <Text style={styles.modalOptionText}>{u}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
         </View>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Título"
-          placeholderTextColor={colors.textSecondary}
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Tempo de preparo (min)"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
-          value={prepTimeMinutes}
-          onChangeText={setPrepTimeMinutes}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Porções"
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="numeric"
-          value={servings}
-          onChangeText={setServings}
-        />
-
-        <Text style={styles.label}>Categoria</Text>
-        <View style={styles.pickerContainer}>
-          <Picker selectedValue={category} onValueChange={setCategory}>
-            <Picker.Item label="Café da manhã" value="Café da manhã" />
-            <Picker.Item label="Almoço" value="Almoço" />
-            <Picker.Item label="Jantar" value="Jantar" />
-            <Picker.Item label="Lanche" value="Lanche" />
-            <Picker.Item label="Sobremesa" value="Sobremesa" />
-            <Picker.Item label="Outro" value="Outro" />
-          </Picker>
-        </View>
-
-        <Text style={styles.sectionTitle}>Ingredientes</Text>
-
-        {ingredients.map((item, index) => (
-          <View key={item.id} style={styles.block}>
-            <Text style={styles.blockTitle}>Ingrediente {index + 1}</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="Nome"
-              placeholderTextColor={colors.textSecondary}
-              value={item.name}
-              onChangeText={(v) => handleIngredientChange(item.id, "name", v)}
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Quantidade"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="numeric"
-              value={item.quantity}
-              onChangeText={(v) =>
-                handleIngredientChange(item.id, "quantity", v)
-              }
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="Unidade"
-              placeholderTextColor={colors.textSecondary}
-              value={item.unit}
-              onChangeText={(v) => handleIngredientChange(item.id, "unit", v)}
-            />
-
-            <Pressable
-              style={styles.removeInlineButton}
-              onPress={() => removeIngredient(item.id)}
-            >
-              <Text style={styles.removeInlineButtonText}>
-                Remover ingrediente
-              </Text>
-            </Pressable>
-          </View>
-        ))}
-
-        <Pressable style={styles.secondaryActionButton} onPress={addIngredient}>
-          <Text style={styles.secondaryActionButtonText}>
-            Adicionar ingrediente
-          </Text>
-        </Pressable>
-
-        <Text style={styles.sectionTitle}>Modo de preparo</Text>
-
-        {steps.map((step, index) => (
-          <View key={step.id} style={styles.block}>
-            <Text style={styles.blockTitle}>Passo {index + 1}</Text>
-
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              placeholder="Descrição"
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              value={step.description}
-              onChangeText={(v) => handleStepChange(step.id, v)}
-            />
-
-            <Pressable
-              style={styles.removeInlineButton}
-              onPress={() => removeStep(step.id)}
-            >
-              <Text style={styles.removeInlineButtonText}>Remover passo</Text>
-            </Pressable>
-          </View>
-        ))}
-
-        <Pressable style={styles.secondaryActionButton} onPress={addStep}>
-          <Text style={styles.secondaryActionButtonText}>Adicionar passo</Text>
-        </Pressable>
-
-        <Pressable style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Salvar Receita</Text>
-        </Pressable>
-      </KeyboardAwareScrollView>
-    </TouchableWithoutFeedback>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 40,
-  },
-  headerCard: {
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 0,
-    borderColor: colors.border,
-    marginBottom: 20,
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    marginBottom: 6,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    justifyContent: "space-between",
-    alignItems: "center",
-    textAlign: "center",
-  },
-  label: {
-    fontWeight: "700",
-    marginBottom: 8,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginTop: 20,
-    marginBottom: 12,
-    color: colors.textPrimary,
-  },
+  safe: { flex: 1, backgroundColor: colors.background },
+  header: { height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface },
+  headerBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: colors.textPrimary },
+  container: { paddingHorizontal: 16, paddingBottom: 40 },
+
+  card: { backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 16, marginBottom: 4 },
+
+  toggleRow: { flexDirection: "row", alignItems: "center" },
+  toggleTitle: { fontSize: 15, fontWeight: "600", color: colors.textPrimary },
+  toggleHint: { fontSize: 12, color: colors.textSecondary, marginTop: 1 },
+
+  sectionHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20, marginBottom: 8 },
+  sectionLabel: { fontSize: 12, fontWeight: "700", color: colors.textMuted, letterSpacing: 0.8 },
+
+  fieldLabel: { fontSize: 13, fontWeight: "600", color: colors.textPrimary, marginBottom: 6, marginTop: 4 },
   input: {
     backgroundColor: colors.surface,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 12,
-    color: colors.textPrimary,
-  },
-  multiline: {
-    minHeight: 120,
-    textAlignVertical: "top",
-  },
-  pickerContainer: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    marginBottom: 8,
-    overflow: "hidden",
-  },
-  block: {
-    borderWidth: 0,
-    borderColor: colors.border,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 14,
-    backgroundColor: colors.surfaceAlt,
-  },
-  blockTitle: {
-    fontWeight: "700",
-    marginBottom: 10,
-    color: colors.textPrimary,
-    fontSize: 16,
-  },
-  removeInlineButton: {
-    backgroundColor: colors.danger,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  removeInlineButtonText: {
-    color: "#fff",
-    fontWeight: "700",
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === "ios" ? 12 : 10,
     fontSize: 15,
-  },
-  secondaryActionButton: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginTop: 4,
-  },
-  secondaryActionButtonText: {
     color: colors.textPrimary,
-    fontSize: 16,
-    fontWeight: "700",
   },
-  saveButton: {
-    marginTop: 22,
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  textarea: { minHeight: 90, textAlignVertical: "top" },
+  rowGap: { flexDirection: "row", gap: 12, marginTop: 4 },
+
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+  chipActive: { backgroundColor: colors.primaryLight, borderColor: colors.primary },
+  chipText: { color: colors.textSecondary, fontSize: 13, fontWeight: "500" },
+  chipTextActive: { color: colors.primaryDark, fontWeight: "700" },
+
+  addBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.primaryLight },
+  addBtnText: { color: colors.primary, fontWeight: "700", fontSize: 13 },
+
+  ingredientItem: { paddingVertical: 10 },
+  itemDivider: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  ingredientGrid: { flexDirection: "row", gap: 8, alignItems: "center" },
+  selectInput: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  selectText: { color: colors.textPrimary, fontSize: 14, flex: 1 },
+  trashBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" },
+
+  stepHeader: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  stepNumber: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
+  stepNumberText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  stepTitle: { flex: 1, fontSize: 15, fontWeight: "600", color: colors.textPrimary },
+  timerToggleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 },
+
+  ctaBar: { position: "absolute", left: 0, right: 0, bottom: 0, paddingHorizontal: 16, paddingTop: 12, paddingBottom: Platform.OS === "ios" ? 32 : 16, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  ctaBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: colors.primary, paddingVertical: 16, borderRadius: 12 },
+  ctaBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+  modalSheet: { backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingHorizontal: 16, paddingBottom: 32, paddingTop: 12 },
+  modalHandle: { alignSelf: "center", width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, marginBottom: 12 },
+  modalTitle: { fontSize: 16, fontWeight: "700", color: colors.textPrimary, marginBottom: 12 },
+  modalOption: { paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.border },
+  modalOptionText: { fontSize: 15, color: colors.textPrimary },
 });

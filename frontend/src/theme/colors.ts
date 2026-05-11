@@ -1,22 +1,39 @@
 export const colors = {
-  background: "#FFF8F0",
-  surface: "#FFFFFF",
-  surfaceAlt: "#FDEDDC",
+  // Base
+  background: "#FFFFFF",
+  surface: "#F9FAFB",
+  surfaceAlt: "#F3F4F6",
 
-  primary: "#F97316",
-  primaryDark: "#EA580C",
-  primaryLight: "#FDBA74",
+  // Primary — verde principal
+  primary: "#22C55E",
+  primaryDark: "#16A34A",
+  primaryLight: "#DCFCE7",
 
-  secondary: "#14B8A6",
-  secondaryDark: "#0F766E",
+  // Secondary
+  secondary: "#3B82F6",
+  secondaryDark: "#1D4ED8",
 
-  textPrimary: "#3B2F2F",
-  textSecondary: "#6B5B53",
+  // Texto
+  textPrimary: "#111827",
+  textSecondary: "#6B7280",
+  textMuted: "#9CA3AF",
 
-  border: "#E8D5C4",
+  // Bordas e divisores
+  border: "#E5E7EB",
+  borderLight: "#F3F4F6",
 
-  success: "#16A34A",
+  // Feedback
+  success: "#22C55E",
   warning: "#F59E0B",
-  danger: "#DC2626",
-  info: "#2563EB",
+  danger: "#EF4444",
+  info: "#3B82F6",
+
+  // Tab bar
+  tabActive: "#22C55E",
+  tabInactive: "#9CA3AF",
+  tabBackground: "#FFFFFF",
+
+  // Card
+  cardShadow: "#00000010",
+  cardBackground: "#FFFFFF",
 };
